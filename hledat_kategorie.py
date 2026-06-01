@@ -73,9 +73,7 @@ class HeurekaAllInOne:
             if klic in nazev_lower:
                 rozsireny_nazev += f" {vyznam}"
 
-        # Uložíme si slova v ČISTÉ podobě (tak, jak je uživatel napsal)
         cista_slova = [s.lower() for s in rozsireny_nazev.split() if len(s) >= 2]
-        # Uložíme si slova i v OŘEZANÉ podobě se skloňováním
         orezana_slova = [self.dej_zaklad_slova(s.lower()) for s in rozsireny_nazev.split() if len(s) >= 2]
         
         if not cista_slova:
@@ -87,28 +85,34 @@ class HeurekaAllInOne:
             cesta_lower = radek.lower()
             pocet_shod = 0
             
-            # Projdeme dvojice: čisté slovo (např. "mobil") a jeho ořezaný základ
+            # Spočítáme, kolik slov z dotazu se v kategorii nachází
             for i in range(len(cista_slova)):
-                slovo_ciste = cista_slova[i]
-                slovo_orezane = orezana_slova[i]
-                
-                # Pokud je v cestě buď přesné slovo, nebo jeho skloňovaný základ, započítáme shodu
-                if slovo_ciste in cesta_lower or slovo_orezane in cesta_lower:
+                if cista_slova[i] in cesta_lower or orezana_slova[i] in cesta_lower:
                     pocet_shod += 1
 
             if pocet_shod > 0:
-                procento_shody = (pocet_shod / len(cista_slova)) * 100
+                # Základní skóre je procento nalezených slov
+                skore = (pocet_shod / len(cista_slova)) * 100
                 
-                # Obří bonus, pokud je nějaké z hledaných slov přímo v koncovém názvu kategorie
+                # --- EXTRA BONUSY PRO FINÁLNÍ KATEGORII ---
                 koncova_kat = radek.split('|')[-1].lower()
-                if any(s in koncova_kat for s in cista_slova) or any(s in koncova_kat for s in orezana_slova):
-                    procento_shody += 30  # zvýšili jsme bonus na 30, ať to skočí nahoru
                 
+                # Masivní bonus, pokud je čisté slovo přímo koncovým názvem (např. "mobilní telefony" vs "mobil")
+                for s in cista_slova:
+                    if s in koncova_kat:
+                        skore += 150  # Obří skok dopředu pro hlavní kategorie
+                
+                # Malá penalizace pro příslušenství, pokud uživatel nehledá vyloženě příslušenství
+                if "příslušenství" in koncova_kat or "pouzdra" in koncova_kat or "držáky" in koncova_kat:
+                    if not any(p in cista_slova for p in ["pouzdro", "obal", "kryt", "drzak", "držík", "prislusenstvi"]):
+                        skore -= 50  # Odsuneme doplňky dolů, pokud hledá samotný stroj
+
                 vysledky.append({
                     'cesta': radek,
-                    'shody': procento_shody
+                    'shody': skore
                 })
 
+        # Seřadíme od nejvyššího skóre po nejnižší
         vysledky = sorted(vysledky, key=lambda x: x['shody'], reverse=True)
         return vysledky
 
