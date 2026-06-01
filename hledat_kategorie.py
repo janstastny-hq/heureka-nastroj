@@ -70,44 +70,56 @@ class HeurekaAllInOne:
             "xbox": "herní konzole"
         }
 
-        # SUPER-POJISTKA PRO NAČTENÍ DATABÁZE
-        databaze_kategorii = []
-        if hasattr(self, 'kategorie_db') and self.kategorie_db:
-            databaze_kategorii = self.kategorie_db
-        else:
-            import os
+        # Načtení databáze z vnitřní paměti aplikace
+        databaze_kategorii = self.kategorie if self.kategorie else []
+        if not databaze_kategorii:
             if os.path.exists("kategorie.txt"):
                 with open("kategorie.txt", "r", encoding="utf-8") as f:
                     databaze_kategorii = [line.strip() for line in f if line.strip()]
 
+        # Pomocná funkce pro odstranění diakritiky, aby porovnávač našel i baze -> bazén
+        def bez_diakritiky(text):
+            intab = "áäčďéěíľĺňóôŕřšťúůýž"
+            outtab = "aacdeeillnoorrstuuuyz"
+            trantab = str.maketrans(intab, outtab)
+            return text.translate(trantab)
+
         # --- DYNAMICKÝ NAŠEPTÁVAČ ZE VŠECH SLOV V DATABÁZI ---
-        # Vytáhneme si všechna unikátní čistá slova, která Heureka v kategoriích vůbec používá
         vsechna_slova_heureky = set()
+        slovnik_bez_diakritiky = {}
+        
         for radek in databaze_kategorii:
             cesta_cista = radek.replace("<CATEGORY_FULLNAME>", "").replace("</CATEGORY_FULLNAME>", "").replace("<CATEGORY_NAME>", "").replace("</CATEGORY_NAME>", "")
-            # Rozdělíme na slova, smažeme interpunkci a uložíme malým písmem
             for s in cesta_cista.replace("|", " ").replace(",", " ").replace(".", " ").split():
-                if len(s) >= 3:
-                    vsechna_slova_heureky.add(s.lower())
+                slovo_clean = s.lower().strip()
+                if len(slovo_clean) >= 3:
+                    vsechna_slova_heureky.add(slovo_clean)
+                    slovnik_bez_diakritiky[bez_diakritiky(slovo_clean)] = slovo_clean
         
-        # Převedeme na seznam pro porovnávač překlepů
         slovnik_pro_opravu = list(vsechna_slova_heureky)
+        slovnik_pro_opravu_ascii = list(slovnik_bez_diakritiky.keys())
         
         navrh_opravy = None
         slova_uzivatele = nazev_lower.split()
         
         for i, slovo in enumerate(slova_uzivatele):
-            # Pokud slovo není v Heurece a je to zjevně překlep (např. baze, iphoone, samsug)
             if slovo not in slovnik_pro_opravu:
-                # Najdeme nejbližší slovo z celého stromu Heureky (shoda aspoň 70 %)
-                blizka_shoda = difflib.get_close_matches(slovo, slovnik_pro_opravu, n=1, cutoff=0.70)
+                # 1. Pokus: Najít shodu přímo v Heureka slovech (přísnost 0.55)
+                blizka_shoda = difflib.get_close_matches(slovo, slovnik_pro_opravu, n=1, cutoff=0.55)
                 if blizka_shoda:
                     slova_uzivatele[i] = blizka_shoda[0]
                     navrh_opravy = " ".join(slova_uzivatele)
                     break
+                else:
+                    # 2. Pokus: Porovnání bez háčků a čárek (baze -> bazen)
+                    slovo_ascii = bez_diakritiky(slovo)
+                    blizka_shoda_ascii = difflib.get_close_matches(slovo_ascii, slovnik_pro_opravu_ascii, n=1, cutoff=0.55)
+                    if blizka_shoda_ascii:
+                        slova_uzivatele[i] = slovnik_bez_diakritiky[blizka_shoda_ascii[0]]
+                        navrh_opravy = " ".join(slova_uzivatele)
+                        break
         # -----------------------------------------------------
 
-        # Pokud máme opravený text, použijeme ho pro vnitřní vyhledávání, aby uživatel rovnou viděl výsledky
         hledany_text_interni = navrh_opravy if navrh_opravy else nazev_produktu
         hledany_text_lower = hledany_text_interni.lower()
 
@@ -169,64 +181,6 @@ class HeurekaAllInOne:
 
         unikatni_vysledky = sorted(unikatni_vysledky, key=lambda x: x['shody'], reverse=True)
         return unikatni_vysledky
-
-        # TATO FUNKCE ČISTÍ KONCOVKY SLOV A ZVLÁDÁ SKLOŇOVÁNÍ Z VČEREJŠKA
-        def dej_zaklad_slova(slovo):
-            slovo = slovo.lower().strip()
-            slovo = slovo.replace('í', 'i').replace('é', 'e').replace('ý', 'y').replace('á', 'a').replace('ó', 'o').replace('ú', 'u').replace('ů', 'u')
-            if len(slovo) <= 3:
-                return slovo
-            koncovky = ['ova', 'ove', 'ovy', 'ovou', 'oveho', 'ovemu', 'ovych', 'ovym', 'ovymi', 'ami', 'em', 'ech', 'ich', 'um', 'ou', 'am', 'y', 'e', 'a', 'i', 'o', 'u']
-            for koncovka in koncovky:
-                if slovo.endswith(koncovka):
-                    vysledek = slovo[:-len(koncovka)]
-                    if len(vysledek) >= 3:
-                        return vysledek
-                    break
-            return slovo
-
-        zaklady_hledanych_slov = [dej_zaklad_slova(s) for s in puvodni_slova]
-        vysledky = []
-
-        for kat in self.kategorie:
-            kat_lower = kat.lower()
-            casti_cesty = [c.strip().lower() for c in kat_lower.split('|')]
-            posledni_sekce = casti_cesty[-1] if casti_cesty else ""
-            
-            slova_konce_kat = [s.strip() for s in posledni_sekce.split() if len(s) > 2]
-            zaklady_konce_kat = [dej_zaklad_slova(s) for s in slova_konce_kat]
-            
-            body = 0
-            pocet_shodnych_slov = 0
-            
-            for z_slovo in zaklady_hledanych_slov:
-                for z_kat in zaklady_konce_kat:
-                    if z_slovo == z_kat:
-                        body += 40
-                        pocet_shodnych_slov += 1
-                    elif z_slovo in z_kat or z_kat in z_slovo:
-                        body += 20
-                        pocet_shodnych_slov += 1
-
-            if pocet_shodnych_slov > 0:
-                if pocet_shodnych_slov > 1:
-                    body += (pocet_shodnych_slov - 1) * 60
-                
-                if len(zaklady_konce_kat) == 1:
-                    body += 15
-                
-                for z_kat in zaklady_konce_kat:
-                    if z_kat not in zaklady_hledanych_slov:
-                        body -= 5
-
-                if body > 0:
-                    vysledky.append({
-                        "cesta": kat,
-                        "shody": body,
-                        "jistota_procenta": 100
-                    })
-        
-        return sorted(vysledky, key=lambda x: x['shody'], reverse=True)
 
     def vyhledej_pomoci_ai(self, nazev_produktu):
         return []
