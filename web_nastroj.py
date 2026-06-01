@@ -37,9 +37,10 @@ txt = {
     "no_param": "U této kategorie není vyžadován žádný povinný parametr." if jazyk == "CZ" else "No required parameter is specified for this category.",
     "err_relevant": "❌ Nepodařilo se najít žádnou dostatečně relevantní kategorii. Zkuste obecnější název." if jazyk == "CZ" else "❌ No sufficiently relevant category found. Try a more general name.",
     "err_empty": "❌ Nepodařilo se najít žádnou odpovídající kategorii." if jazyk == "CZ" else "❌ No matching category found.",
-    # Texty pro doporučené parametry z V2
-    "all_params_label": "💡 **Všechny dostupné a doporučené parametry pro tuto sekci (Heureka V2):**" if jazyk == "CZ" else "💡 **All available and recommended parameters for this section (Heureka V2):**",
-    "no_all_param": "Pro tuto kategorii nejsou v Heureka V2 definovány žádné další doporučené parametry." if jazyk == "CZ" else "No additional recommended parameters are defined for this category in Heureka V2."
+    # Nové texty pro doporučené parametry z V2
+    "all_params_label": "💡 **Doporučené a volitelné parametry (Heureka V2):**" if jazyk == "CZ" else "💡 **Recommended and optional parameters (Heureka V2):**",
+    "no_all_param": "Pro tuto kategorii nejsou v Heureka V2 definovány žádné další doporučené parametry." if jazyk == "CZ" else "No additional recommended parameters are defined for this category in Heureka V2.",
+    "table_header": "Název parametru" if jazyk == "CZ" else "Parameter name"
 }
 
 st.title(txt["title"])
@@ -114,17 +115,22 @@ if produkt_input.strip():
                 else:
                     st.success(txt["no_param"])
                 
-                # --- DOPORUČENÉ PARAMETRY (PROSTÝ TEXT V MODRÉM BOXU) ---
+                # --- NOVÝ PŘEHLEDNÝ ROLOVACÍ BOX PRO V2 ---
                 st.write("")  # Mezera pro přehlednost
+                st.info(txt["all_params_label"])
                 
                 if vsechny_parametry_text and vsechny_parametry_text.strip():
-                    st.info(txt["all_params_label"])
-                    
-                    # Rozsekáme parametry podle čárek
+                    # Rozsekáme parametry podle čárek a očistíme od mezer
                     list_parametru = [p.strip() for p in vsechny_parametry_text.split(',') if p.strip()]
                     
-                    # Zobrazíme je čistě vedle sebe v jednom řádku oddělené lomítkem
-                    st.markdown(" / ".join([f"`{param}`" for param in list_parametru]))
+                    # Pokud jich je víc než 10, Streamlit dataframe automaticky zapne scrollbar.
+                    # Výška 380px odpovídá přesně zhruba 10 řádkům, pak se začne rolovat.
+                    st.dataframe(
+                        {txt["table_header"]: list_parametru},
+                        use_container_width=True,
+                        height=380,
+                        hide_index=True
+                    )
                 else:
                     st.caption(txt["no_all_param"])
                 # -------------------------------------------------------------------------------
