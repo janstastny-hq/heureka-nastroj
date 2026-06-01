@@ -93,7 +93,7 @@ class HeurekaAllInOne:
         hleda_mobil = any(m in nazev_lower for m in ["mobil", "tel", "phon"])
 
         for radek in databaze_kategorii:
-            # ČIŠTĚNÍ: Odstraníme XML značky, pokud v řádku jsou
+            # ČIŠTĚNÍ: Odstraníme XML značky kompletně a hned na začátku!
             cista_cesta = radek.replace("<CATEGORY_FULLNAME>", "").replace("</CATEGORY_FULLNAME>", "").strip()
             cesta_lower = cista_cesta.lower()
             
@@ -122,7 +122,7 @@ class HeurekaAllInOne:
                         skore -= 500  # Odsuneme doplňky dolů
 
                 vysledky.append({
-                    'cesta': cista_cesta,
+                    'cesta': cista_cesta, # Tady předáváme 100% vyčištěnou cestu bez XML
                     'shody': skore
                 })
 
