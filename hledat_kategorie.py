@@ -82,37 +82,37 @@ class HeurekaAllInOne:
         vysledky = []
 
         for radek in self.kategorie_db:
-            cesta_lower = radek.lower()
-            pocet_shod = 0
+            # ČIŠTĚNÍ: Odstraníme XML značky, pokud v řádku jsou, abychom hodnotili jen čistou cestu
+            cista_cesta = radek.replace("<CATEGORY_FULLNAME>", "").replace("</CATEGORY_FULLNAME>", "").strip()
+            cesta_lower = cista_cesta.lower()
             
-            # Spočítáme, kolik slov z dotazu se v kategorii nachází
+            pocet_shod = 0
+            # Spočítáme, kolik slov z dotazu se v ČISTÉ cestě nachází
             for i in range(len(cista_slova)):
                 if cista_slova[i] in cesta_lower or orezana_slova[i] in cesta_lower:
                     pocet_shod += 1
 
             if pocet_shod > 0:
-                # Základní skóre je procento nalezených slov
                 skore = (pocet_shod / len(cista_slova)) * 100
                 
-                # --- EXTRA BONUSY PRO FINÁLNÍ KATEGORII ---
-                koncova_kat = radek.split('|')[-1].lower()
+                # Sledujeme konec čisté cesty bez XML značek
+                koncova_kat = cista_cesta.split('|')[-1].lower()
                 
-                # Masivní bonus, pokud je čisté slovo přímo koncovým názvem (např. "mobilní telefony" vs "mobil")
+                # Pokud uživatel napsal slovo, které je přímo finální kategorií, získá obří výhodu
                 for s in cista_slova:
                     if s in koncova_kat:
-                        skore += 150  # Obří skok dopředu pro hlavní kategorie
+                        skore += 300  # Ještě jsme přitopili na +300 bodů
                 
-                # Malá penalizace pro příslušenství, pokud uživatel nehledá vyloženě příslušenství
-                if "příslušenství" in koncova_kat or "pouzdra" in koncova_kat or "držáky" in koncova_kat:
+                # Penalizace pro doplňky a pouzdra, pokud je uživatel vyloženě nehledá
+                if "příslušenství" in koncova_kat or "pouzdra" in koncova_kat or "držáky" in koncova_kat or "kryty" in koncova_kat:
                     if not any(p in cista_slova for p in ["pouzdro", "obal", "kryt", "drzak", "držík", "prislusenstvi"]):
-                        skore -= 50  # Odsuneme doplňky dolů, pokud hledá samotný stroj
+                        skore -= 150  # Drsnější odsunutí doplňků dolů
 
                 vysledky.append({
-                    'cesta': radek,
+                    'cesta': cista_cesta,  # Vrátíme už krásnou čistou cestu bez XML tagů!
                     'shody': skore
                 })
 
-        # Seřadíme od nejvyššího skóre po nejnižší
         vysledky = sorted(vysledky, key=lambda x: x['shody'], reverse=True)
         return vysledky
 
