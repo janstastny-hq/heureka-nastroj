@@ -81,40 +81,54 @@ class HeurekaAllInOne:
 
         vysledky = []
 
+        # POJISTKA: Detekujeme, zda uživatel nehledá mobil/telefon v jakémkoliv tvaru
+        hleda_mobil = any(m in nazev_lower for m in ["mobil", "tel", "phon"])
+
         for radek in self.kategorie_db:
-            # ČIŠTĚNÍ: Odstraníme XML značky, pokud v řádku jsou, abychom hodnotili jen čistou cestu
+            # ČIŠTĚNÍ: Odstraníme XML značky, pokud v řádku jsou
             cista_cesta = radek.replace("<CATEGORY_FULLNAME>", "").replace("</CATEGORY_FULLNAME>", "").strip()
             cesta_lower = cista_cesta.lower()
             
             pocet_shod = 0
-            # Spočítáme, kolik slov z dotazu se v ČISTÉ cestě nachází
             for i in range(len(cista_slova)):
                 if cista_slova[i] in cesta_lower or orezana_slova[i] in cesta_lower:
                     pocet_shod += 1
 
-            if pocet_shod > 0:
-                skore = (pocet_shod / len(cista_slova)) * 100
+            if pocet_shod > 0 or (hleda_mobil and "mobilní telefony" in cesta_lower):
+                skore = (pocet_shod / len(cista_slova)) * 100 if cista_slova else 0
                 
-                # Sledujeme konec čisté cesty bez XML značek
                 koncova_kat = cista_cesta.split('|')[-1].lower()
                 
-                # Pokud uživatel napsal slovo, které je přímo finální kategorií, získá obří výhodu
+                # Pokud uživatel napsal slovo z koncové kategorie, získá obří výhodu
                 for s in cista_slova:
                     if s in koncova_kat:
-                        skore += 300  # Ještě jsme přitopili na +300 bodů
+                        skore += 300
+                
+                # --- NEPRŮSTŘELNÁ POJISTKA ---
+                # Pokud uživatel hledá mobil a tohle je PŘÍMO ta hlavní kategorie mobilních telefonů, dáme jí astronomické skóre
+                if hleda_mobil and koncova_kat.strip() == "mobilní telefony":
+                    skore += 5000  # Tohle ji vystřelí nad cokoliv jiného na světě
                 
                 # Penalizace pro doplňky a pouzdra, pokud je uživatel vyloženě nehledá
                 if "příslušenství" in koncova_kat or "pouzdra" in koncova_kat or "držáky" in koncova_kat or "kryty" in koncova_kat:
                     if not any(p in cista_slova for p in ["pouzdro", "obal", "kryt", "drzak", "držík", "prislusenstvi"]):
-                        skore -= 150  # Drsnější odsunutí doplňků dolů
+                        skore -= 500  # Odsuneme doplňky dolů
 
                 vysledky.append({
-                    'cesta': cista_cesta,  # Vrátíme už krásnou čistou cestu bez XML tagů!
+                    'cesta': cista_cesta,
                     'shody': skore
                 })
 
-        vysledky = sorted(vysledky, key=lambda x: x['shody'], reverse=True)
-        return vysledky
+        # Odstranění duplicit
+        videno = set()
+        unikatni_vysledky = []
+        for v in vysledky:
+            if v['cesta'] not in videno:
+                videno.add(v['cesta'])
+                unikatni_vysledky.append(v)
+
+        unikatni_vysledky = sorted(unikatni_vysledky, key=lambda x: x['shody'], reverse=True)
+        return unikatni_vysledky
 
         # TATO FUNKCE ČISTÍ KONCOVKY SLOV A ZVLÁDÁ SKLOŇOVÁNÍ Z VČEREJŠKA
         def dej_zaklad_slova(slovo):
