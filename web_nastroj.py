@@ -10,7 +10,7 @@ st.set_page_config(
     layout="centered"
 )
 
-# Bez cache dekorátoru, aby se změny v souborech ihned projevily na webu
+# Bez cache dekorátoru, aby Streamlit okamžitě reagoval na změny v souborech
 def nacti_nastroj():
     return HeurekaAllInOne()
 
@@ -33,13 +33,13 @@ txt = {
     "rules_title": "### 📋 Systémová pravidla pro:" if jazyk == "CZ" else "### 📋 System rules for:",
     "structure_label": "**Správná struktura názvu:**" if jazyk == "CZ" else "**Correct name structure:**",
     "no_rule": "Pro tuto kategorii není definováno žádné specifické pravidlo v pravidla.txt." if jazyk == "CZ" else "No specific rule is defined for this category in pravidla.txt.",
-    "params_label": "**Povinné parametry v XML struktuře:**" if jazyk == "CZ" else "**Required parameters in XML structure:**",
+    "params_label": "🚨 **Povinné parametry v XML struktuře:**" if jazyk == "CZ" else "🚨 **Required parameters in XML structure:**",
     "no_param": "U této kategorie není vyžadován žádný povinný parametr." if jazyk == "CZ" else "No required parameter is specified for this category.",
     "err_relevant": "❌ Nepodařilo se najít žádnou dostatečně relevantní kategorii. Zkuste obecnější název." if jazyk == "CZ" else "❌ No sufficiently relevant category found. Try a more general name.",
     "err_empty": "❌ Nepodařilo se najít žádnou odpovídající kategorii." if jazyk == "CZ" else "❌ No matching category found.",
     # Texty pro doporučené parametry z V2
     "all_params_label": "💡 **Všechny dostupné a doporučené parametry pro tuto sekci (Heureka V2):**" if jazyk == "CZ" else "💡 **All available and recommended parameters for this section (Heureka V2):**",
-    "no_all_param": "Pro tuto kategorii nejsou v databázi definovány žádné další doporučené parametry." if jazyk == "CZ" else "No additional recommended parameters are defined for this category."
+    "no_all_param": "Pro tuto kategorii nejsou v Heureka V2 definovány žádné další doporučené parametry." if jazyk == "CZ" else "No additional recommended parameters are defined for this category in Heureka V2."
 }
 
 st.title(txt["title"])
@@ -67,16 +67,20 @@ if produkt_input.strip():
                 st.divider()
                 koncova_kat = vybrana_cesta.split('|')[-1].strip()
                 
+                # Načítání z obou souborů na NAPROSTO STEJNÉM PRINCIPU vyhledávacího enginu
                 pravidlo_text = nastroj.najdi_nejlepsi_shodu_v_db(koncova_kat.lower(), nastroj.pravidla_db)
                 parametry_text = nastroj.najdi_nejlepsi_shodu_v_db(koncova_kat.lower(), nastroj.parametry_db)
+                vsechny_parametry_text = nastroj.najdi_nejlepsi_shodu_v_db(koncova_kat.lower(), nastroj.vsechny_parametry_db)
                 
                 st.markdown(f"{txt['rules_title']} `{koncova_kat}`")
                 
+                # 1. Zobrazení systémových pravidel
                 if pravidlo_text:
                     st.warning(f"{txt['structure_label']} {pravidlo_text}")
                 else:
                     st.info(txt["no_rule"])
                 
+                # 2. Zobrazení POVINNÝCH parametrů v XML struktuře (Zůstává jak bylo)
                 if parametry_text and parametry_text.strip():
                     st.error(txt["params_label"])
                     
@@ -109,27 +113,23 @@ if produkt_input.strip():
 ```"""
                         st.markdown(f"**{p_cisty}:**")
                         st.markdown(xml_ukazka)
-                        
                 else:
                     st.success(txt["no_param"])
                 
-                # --- ZRCADLOVÉ VYHLEDÁVÁNÍ PRO DOPORUČENÉ PARAMETRY (Z PARAMETRY-V2.TXT) ---
-                st.write("")  # Estetická mezera
-                
-                # Použijeme tvůj originální, plně funkční vyhledávací engine
-                vsechny_parametry_text = nastroj.najdi_nejlepsi_shodu_v_db(koncova_kat.lower(), nastroj.vsechny_parametry_db)
+                # 3. Zobrazení DOPORUČENÝCH parametrů z V2 (ČISTÝ VÝPIS NÁZVŮ V JEDNOM MODRÉM BOXU)
+                st.write("")  # Drobná mezera
                 
                 if vsechny_parametry_text and vsechny_parametry_text.strip():
                     st.info(txt["all_params_label"])
                     
-                    # Rozsekáme doporučené parametry podle čárek a očistíme je
+                    # Rozsekáme parametry podle čárek, očistíme je od mezer
                     list_parametru = [p.strip() for p in vsechny_parametry_text.split(',') if p.strip()]
                     
-                    # Zobrazíme je formátované vedle sebe oddělené lomítkem
+                    # Vytiskneme je vedle sebe jako čisté textové tagy oddělené lomítkem
                     st.markdown(" / ".join([f"`{param}`" for param in list_parametru]))
                 else:
                     st.caption(txt["no_all_param"])
-                # -------------------------------------------------------------------------
+                # -------------------------------------------------------------------------------
                         
         else:
             st.error(txt["err_relevant"])
