@@ -8,7 +8,8 @@ AI_DOSTUPNA = False
 AKTUALNI_SLOZKA = os.path.dirname(os.path.abspath(__file__))
 SOUBOR_KATEGORII = os.path.join(AKTUALNI_SLOZKA, 'kategorie.txt')
 SOUBOR_PARAMETRU = os.path.join(AKTUALNI_SLOZKA, 'parametry.txt')
-SOUBOR_PARAMETRU_V2 = os.path.join(AKTUALNI_SLOZKA, 'parametry-v2.txt') # Nová obří databáze
+# 🚀 OPRAVENÝ NÁZEV: Nyní přesně odpovídá tvé dlouhé pomlčce ze screenshotu!
+SOUBOR_PARAMETRU_V2 = os.path.join(AKTUALNI_SLOZKA, 'parametry–v2.txt') 
 SOUBOR_PRAVIDEL = os.path.join(AKTUALNI_SLOZKA, 'pravidla.txt')
 
 class HeurekaAllInOne:
@@ -52,6 +53,7 @@ class HeurekaAllInOne:
                     
                     oddelovac = None
                     if ' - ' in radek_s: oddelovac = ' - '
+                    elif ' – ' in radek_s: oddelovac = ' – '
                     elif '=' in radek_s: oddelovac = '='
                     elif '–' in radek_s: oddelovac = '–'
                     elif '—' in radek_s: oddelovac = '—'
@@ -182,17 +184,4 @@ class HeurekaAllInOne:
             if zaklad_hledaneho in zaklaw_db or zaklaw_db in zaklad_hledaneho:
                 return databaze[klic_db]
                 
-        return None
-
-    # 🚀 NOVÁ NEPRŮSTŘELNÁ FUNKCE EXKLUZIVNĚ PRO V2 DATABÁZI
-    def najdi_v2_parametry(self, kategorie_nazev):
-        kat_cista = kategorie_nazev.lower().strip()
-        # Přímý zásah do černého
-        if kat_cista in self.vsechny_parametry_db:
-            return self.vsechny_parametry_db[kat_cista]
-        
-        # Pojistka pro částečnou textovou shodu v klíčích
-        for klic in self.vsechny_parametry_db.keys():
-            if klic == kat_cista or klic in kat_cista or kat_cista in klic:
-                return self.vsechny_parametry_db[klic]
         return None

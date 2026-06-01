@@ -67,9 +67,10 @@ if produkt_input.strip():
                 st.divider()
                 koncova_kat = vybrana_cesta.split('|')[-1].strip()
                 
-                # Načítání pro povinné a pravidla zůstává přes tvůj engine
+                # Načítání pro VŠECHNY TŘI databáze na chlup stejným způsobem přes funkční engine
                 pravidlo_text = nastroj.najdi_nejlepsi_shodu_v_db(koncova_kat.lower(), nastroj.pravidla_db)
                 parametry_text = nastroj.najdi_nejlepsi_shodu_v_db(koncova_kat.lower(), nastroj.parametry_db)
+                vsechny_parametry_text = nastroj.najdi_nejlepsi_shodu_v_db(koncova_kat.lower(), nastroj.vsechny_parametry_db)
                 
                 st.markdown(f"{txt['rules_title']} `{koncova_kat}`")
                 
@@ -113,11 +114,8 @@ if produkt_input.strip():
                 else:
                     st.success(txt["no_param"])
                 
-                # --- DOPORUČENÉ PARAMETRY (ZCELA NOVÉ VOLÁNÍ PŘES FUNKCI NAJDI_V2_PARAMETRY) ---
+                # --- DOPORUČENÉ PARAMETRY (PROSTÝ TEXT BEZ XML TAGŮ V MODRÉM BOXU) ---
                 st.write("")  # Mezera pro přehlednost
-                
-                # Voláme novou neprůstřelnou metodu napsanou speciálně pro V2 soubor
-                vsechny_parametry_text = nastroj.najdi_v2_parametry(koncova_kat)
                 
                 if vsechny_parametry_text and vsechny_parametry_text.strip():
                     st.info(txt["all_params_label"])
@@ -125,7 +123,7 @@ if produkt_input.strip():
                     # Rozsekáme parametry podle čárek
                     list_parametru = [p.strip() for p in vsechny_parametry_text.split(',') if p.strip()]
                     
-                    # Zobrazíme je vedle sebe v jednom řádku oddělené lomítkem
+                    # Zobrazíme je čistě vedle sebe v jednom řádku oddělené lomítkem
                     st.markdown(" / ".join([f"`{param}`" for param in list_parametru]))
                 else:
                     st.caption(txt["no_all_param"])
