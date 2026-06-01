@@ -73,9 +73,12 @@ class HeurekaAllInOne:
             if klic in nazev_lower:
                 rozsireny_nazev += f" {vyznam}"
 
-        # Rozdělíme na slova a vyčistíme přes ořezávač koncovek (dej_zaklad_slova)
-        puvodni_slova = [self.dej_zaklad_slova(s.lower()) for s in rozsireny_nazev.split() if len(s) >= 2]
-        if not puvodni_slova:
+        # Uložíme si slova v ČISTÉ podobě (tak, jak je uživatel napsal)
+        cista_slova = [s.lower() for s in rozsireny_nazev.split() if len(s) >= 2]
+        # Uložíme si slova i v OŘEZANÉ podobě se skloňováním
+        orezana_slova = [self.dej_zaklad_slova(s.lower()) for s in rozsireny_nazev.split() if len(s) >= 2]
+        
+        if not cista_slova:
             return []
 
         vysledky = []
@@ -84,18 +87,22 @@ class HeurekaAllInOne:
             cesta_lower = radek.lower()
             pocet_shod = 0
             
-            for slovo in puvodni_slova:
-                # TADY JE TA ZMĚNA: Kontrolujeme klasickou shodu NEBO zda je slovo součástí (sub-string)
-                if slovo in cesta_lower:
+            # Projdeme dvojice: čisté slovo (např. "mobil") a jeho ořezaný základ
+            for i in range(len(cista_slova)):
+                slovo_ciste = cista_slova[i]
+                slovo_orezane = orezana_slova[i]
+                
+                # Pokud je v cestě buď přesné slovo, nebo jeho skloňovaný základ, započítáme shodu
+                if slovo_ciste in cesta_lower or slovo_orezane in cesta_lower:
                     pocet_shod += 1
 
             if pocet_shod > 0:
-                procento_shody = (pocet_shod / len(puvodni_slova)) * 100
+                procento_shody = (pocet_shod / len(cista_slova)) * 100
                 
-                # Bonus pro shodu přímo v posledním slově kategorie
+                # Obří bonus, pokud je nějaké z hledaných slov přímo v koncovém názvu kategorie
                 koncova_kat = radek.split('|')[-1].lower()
-                if any(s in koncova_kat for s in puvodni_slova):
-                    procento_shody += 10
+                if any(s in koncova_kat for s in cista_slova) or any(s in koncova_kat for s in orezana_slova):
+                    procento_shody += 30  # zvýšili jsme bonus na 30, ať to skočí nahoru
                 
                 vysledky.append({
                     'cesta': radek,
