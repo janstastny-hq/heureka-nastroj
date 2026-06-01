@@ -8,16 +8,19 @@ AI_DOSTUPNA = False
 AKTUALNI_SLOZKA = os.path.dirname(os.path.abspath(__file__))
 SOUBOR_KATEGORII = os.path.join(AKTUALNI_SLOZKA, 'kategorie.txt')
 SOUBOR_PARAMETRU = os.path.join(AKTUALNI_SLOZKA, 'parametry.txt')
+SOUBOR_PARAMETRU_V2 = os.path.join(AKTUALNI_SLOZKA, 'parametry-v2.txt') # Nová obří databáze
 SOUBOR_PRAVIDEL = os.path.join(AKTUALNI_SLOZKA, 'pravidla.txt')
 
 class HeurekaAllInOne:
     def __init__(self):
         self.kategorie = []
         self.parametry_db = {}
+        self.vsechny_parametry_db = {} # Databáze pro kompletní doporučené parametry
         self.pravidla_db = {}
         
         self.vytahni_category_fullname()
         self.nacti_txt_databazi(SOUBOR_PARAMETRU, self.parametry_db)
+        self.nacti_txt_databazi(SOUBOR_PARAMETRU_V2, self.vsechny_parametry_db) # Načtení nové DB
         self.nacti_txt_databazi(SOUBOR_PRAVIDEL, self.pravidla_db)
 
     def vytahni_category_fullname(self):

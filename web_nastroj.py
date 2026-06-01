@@ -36,7 +36,10 @@ txt = {
     "params_label": "**Povinné parametry v XML struktuře:**" if jazyk == "CZ" else "**Required parameters in XML structure:**",
     "no_param": "U této kategorie není vyžadován žádný povinný parametr." if jazyk == "CZ" else "No required parameter is specified for this category.",
     "err_relevant": "❌ Nepodařilo se najít žádnou dostatečně relevantní kategorii. Zkuste obecnější název." if jazyk == "CZ" else "❌ No sufficiently relevant category found. Try a more general name.",
-    "err_empty": "❌ Nepodařilo se najít žádnou odpovídající kategorii." if jazyk == "CZ" else "❌ No matching category found."
+    "err_empty": "❌ Nepodařilo se najít žádnou odpovídající kategorii." if jazyk == "CZ" else "❌ No matching category found.",
+    # Nové texty pro doporučené parametry z V2
+    "all_params_label": "💡 **Všechny dostupné a doporučené parametry pro tuto sekci (Heureka V2):**" if jazyk == "CZ" else "💡 **All available and recommended parameters for this section (Heureka V2):**",
+    "no_all_param": "Pro tuto kategorii nejsou v databázi definovány žádné další doporučené parametry." if jazyk == "CZ" else "No additional recommended parameters are defined for this category."
 }
 
 st.title(txt["title"])
@@ -109,6 +112,23 @@ if produkt_input.strip():
                         
                 else:
                     st.success(txt["no_param"])
+                
+                # --- NOVÝ MODUL: DOPORUČENÉ PARAMETRY (Z PARAMETRY-V2.TXT) ---
+                st.write("")  # Drobná estetická mezera
+                vsechny_parametry_text = nastroj.najdi_nejlepsi_shodu_v_db(koncova_kat.lower(), nastroj.vsechny_parametry_db)
+                
+                if vsechny_parametry_text and vsechny_parametry_text.strip():
+                    st.info(txt["all_params_label"])
+                    
+                    # Rozsekáme parametry podle čárek a očistíme je
+                    list_parametru = [p.strip() for p in vsechny_parametry_text.split(',') if p.strip()]
+                    
+                    # Vykreslíme je přehledně vedle sebe jako formátované tagy oddělené lomítkem
+                    st.markdown(" / ".join([f"`{param}`" for param in list_parametru]))
+                else:
+                    st.caption(txt["no_all_param"])
+                # -------------------------------------------------------------
+                        
         else:
             st.error(txt["err_relevant"])
     else:
