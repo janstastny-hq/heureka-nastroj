@@ -67,15 +67,43 @@ class HeurekaAllInOne:
             "playstation": "herní konzole",
             "xbox": "herní konzole"
         }
-        
+
         rozsireny_nazev = nazev_produktu
         for klic, vyznam in synonyma.items():
             if klic in nazev_lower:
                 rozsireny_nazev += f" {vyznam}"
-        
-        puvodni_slova = [s.lower() for s in rozsireny_nazev.split() if len(s) > 2]
+
+        # Rozdělíme na slova a vyčistíme přes ořezávač koncovek (dej_zaklad_slova)
+        puvodni_slova = [self.dej_zaklad_slova(s.lower()) for s in rozsireny_nazev.split() if len(s) >= 2]
         if not puvodni_slova:
             return []
+
+        vysledky = []
+
+        for radek in self.kategorie_db:
+            cesta_lower = radek.lower()
+            pocet_shod = 0
+            
+            for slovo in puvodni_slova:
+                # TADY JE TA ZMĚNA: Kontrolujeme klasickou shodu NEBO zda je slovo součástí (sub-string)
+                if slovo in cesta_lower:
+                    pocet_shod += 1
+
+            if pocet_shod > 0:
+                procento_shody = (pocet_shod / len(puvodni_slova)) * 100
+                
+                # Bonus pro shodu přímo v posledním slově kategorie
+                koncova_kat = radek.split('|')[-1].lower()
+                if any(s in koncova_kat for s in puvodni_slova):
+                    procento_shody += 10
+                
+                vysledky.append({
+                    'cesta': radek,
+                    'shody': procento_shody
+                })
+
+        vysledky = sorted(vysledky, key=lambda x: x['shody'], reverse=True)
+        return vysledky
 
         # TATO FUNKCE ČISTÍ KONCOVKY SLOV A ZVLÁDÁ SKLOŇOVÁNÍ Z VČEREJŠKA
         def dej_zaklad_slova(slovo):
