@@ -10,7 +10,7 @@ st.set_page_config(
     layout="centered"
 )
 
-# Bez cache dekorátoru, aby se databáze natvrdo načetly znovu a nezůstávaly viset v paměti
+# Bez cache dekorátoru, aby se změny v souborech ihned projevily na webu
 def nacti_nastroj():
     return HeurekaAllInOne()
 
@@ -37,7 +37,7 @@ txt = {
     "no_param": "U této kategorie není vyžadován žádný povinný parametr." if jazyk == "CZ" else "No required parameter is specified for this category.",
     "err_relevant": "❌ Nepodařilo se najít žádnou dostatečně relevantní kategorii. Zkuste obecnější název." if jazyk == "CZ" else "❌ No sufficiently relevant category found. Try a more general name.",
     "err_empty": "❌ Nepodařilo se najít žádnou odpovídající kategorii." if jazyk == "CZ" else "❌ No matching category found.",
-    # Nové texty pro doporučené parametry z V2
+    # Texty pro doporučené parametry z V2
     "all_params_label": "💡 **Všechny dostupné a doporučené parametry pro tuto sekci (Heureka V2):**" if jazyk == "CZ" else "💡 **All available and recommended parameters for this section (Heureka V2):**",
     "no_all_param": "Pro tuto kategorii nejsou v databázi definovány žádné další doporučené parametry." if jazyk == "CZ" else "No additional recommended parameters are defined for this category."
 }
@@ -113,33 +113,23 @@ if produkt_input.strip():
                 else:
                     st.success(txt["no_param"])
                 
-                # --- DEFINITIVNÍ ČISTÉ PÁROVÁNÍ PRO PARAMETRY-V2.TXT ---
-                st.write("")  # Drobná estetická mezera
+                # --- ZRCADLOVÉ VYHLEDÁVÁNÍ PRO DOPORUČENÉ PARAMETRY (Z PARAMETRY-V2.TXT) ---
+                st.write("")  # Estetická mezera
                 
-                vsechny_parametry_text = None
-                koncova_kat_lower = koncova_kat.lower().strip()
-                
-                # 1. Krok: Úplně přímé porovnání s plným slovem (např. "bazény" == "bazény", "auta" == "auta")
-                if koncova_kat_lower in nastroj.vsechny_parametry_db:
-                    vsechny_parametry_text = nastroj.vsechny_parametry_db[koncova_kat_lower]
-                else:
-                    # 2. Krok: Pokud se to stoprocentně netrefí (třeba kvůli velikosti písmen), projdeme klíče napřímo
-                    for klic_db, hodnota_db in nastroj.vsechny_parametry_db.items():
-                        if klic_db == koncova_kat_lower or klic_db in koncova_kat_lower or koncova_kat_lower in klic_db:
-                            vsechny_parametry_text = hodnota_db
-                            break
+                # Použijeme tvůj originální, plně funkční vyhledávací engine
+                vsechny_parametry_text = nastroj.najdi_nejlepsi_shodu_v_db(koncova_kat.lower(), nastroj.vsechny_parametry_db)
                 
                 if vsechny_parametry_text and vsechny_parametry_text.strip():
                     st.info(txt["all_params_label"])
                     
-                    # Rozsekáme parametry podle čárek a očistíme je
+                    # Rozsekáme doporučené parametry podle čárek a očistíme je
                     list_parametru = [p.strip() for p in vsechny_parametry_text.split(',') if p.strip()]
                     
-                    # Vykreslíme je přehledně vedle sebe oddělené lomítkem
+                    # Zobrazíme je formátované vedle sebe oddělené lomítkem
                     st.markdown(" / ".join([f"`{param}`" for param in list_parametru]))
                 else:
                     st.caption(txt["no_all_param"])
-                # -------------------------------------------------------------------------------
+                # -------------------------------------------------------------------------
                         
         else:
             st.error(txt["err_relevant"])
