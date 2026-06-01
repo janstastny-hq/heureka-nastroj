@@ -18,28 +18,53 @@ def nacti_nastroj():
 
 nastroj = nacti_nastroj()
 
-# Hlavní nadpisy vizuálu
-st.title("🤖 Heureka All-In-One")
-st.subheader("Chytré vyhledávání kategorií a systémových pravidel")
-st.write("Zadejte název produktu z e-shopu a algoritmus se postará o zbytek.")
+# --- JAZYKOVÝ PŘEPÍNAČ NAHOŘE ---
+jazyk = st.radio(
+    "🌐 Language / Jazyk:",
+    options=["CZ", "EN"],
+    horizontal=True
+)
+
+# Definice textů pro rozhraní podle vybraného jazyka
+txt = {
+    "title": "🤖 Heureka All-In-One" if jazyk == "CZ" else "🤖 Heureka All-In-One",
+    "subtitle": "Chytré vyhledávání kategorií a systémových pravidel" if jazyk == "CZ" else "Smart search for categories and system rules",
+    "desc": "Zadejte název produktu z e-shopu a algoritmus se postará o zbytek." if jazyk == "CZ" else "Enter the product name from the e-shop and the algorithm will do the rest.",
+    "input_label": "📝 Název produktu z eshopu:" if jazyk == "CZ" else "📝 Product name from e-shop:",
+    "input_placeholder": "Zadejte název produktu..." if jazyk == "CZ" else "Enter product name...",
+    "type_classic": "🔍 Typ hledání: Klasická shoda" if jazyk == "CZ" else "🔍 Search type: Classic match",
+    "select_label": "👉 Vyberte nebo potvrďte finální kategorii:" if jazyk == "CZ" else "👉 Select or confirm the final category:",
+    "rules_title": "### 📋 Systémová pravidla pro:" if jazyk == "CZ" else "### 📋 System rules for:",
+    "structure_label": "**Správná struktura názvu:**" if jazyk == "CZ" else "**Correct name structure:**",
+    "no_rule": "Pro tuto kategorii není definováno žádné specifické pravidlo v pravidla.txt." if jazyk == "CZ" else "No specific rule is defined for this category in pravidla.txt.",
+    "params_label": "**Povinné parametry v XML struktuře:**" if jazyk == "CZ" else "**Required parameters in XML structure:**",
+    "no_param": "U této kategorie není vyžadován žádný povinný parametr." if jazyk == "CZ" else "No required parameter is specified for this category.",
+    "err_relevant": "❌ Nepodařilo se najít žádnou dostatečně relevantní kategorii. Zkuste obecnější název." if jazyk == "CZ" else "❌ No sufficiently relevant category found. Try a more general name.",
+    "err_empty": "❌ Nepodařilo se najít žádnou odpovídající kategorii." if jazyk == "CZ" else "❌ No matching category found."
+}
+
+# Hlavní nadpisy vizuálu (používají slovník txt)
+st.title(txt["title"])
+st.subheader(txt["subtitle"])
+st.write(txt["desc"])
 
 st.divider()
 
 # Vyhledávací pole pro produkt
-produkt_input = st.text_input("📝 Název produktu z eshopu:", placeholder="Zadejte název produktu...")
+produkt_input = st.text_input(txt["input_label"], placeholder=txt["input_placeholder"])
 
 if produkt_input.strip():
     shody = nastroj.vyhledej_presnou_logikou(produkt_input.strip())
     
     if shody:
-        st.info("🔍 Typ hledání: Klasická shoda")
+        st.info(txt["type_classic"])
         
         relevantni_shody = [s for s in shody if s.get('shody', 0) >= 20]
         top_shody = relevantni_shody[:10]
         
         if top_shody:
             seznam_kategorii = [shoda['cesta'] for shoda in top_shody]
-            vybrana_cesta = st.selectbox("👉 Vyberte nebo potvrďte finální kategorii:", seznam_kategorii)
+            vybrana_cesta = st.selectbox(txt["select_label"], seznam_kategorii)
             
             if vybrana_cesta:
                 st.divider()
@@ -48,38 +73,38 @@ if produkt_input.strip():
                 pravidlo_text = nastroj.najdi_nejlepsi_shodu_v_db(koncova_kat.lower(), nastroj.pravidla_db)
                 parametry_text = nastroj.najdi_nejlepsi_shodu_v_db(koncova_kat.lower(), nastroj.parametry_db)
                 
-                st.markdown(f"### 📋 Systémová pravidla pro: `{koncova_kat}`")
+                st.markdown(f"{txt['rules_title']} `{koncova_kat}`")
                 
                 # Žlutý box pro správnou strukturu názvu
                 if pravidlo_text:
-                    st.warning(f"**Správná struktura názvu:** {pravidlo_text}")
+                    st.warning(f"{txt['structure_label']} {pravidlo_text}")
                 else:
-                    st.info("Pro tuto kategorií není definováno žádné specifické pravidlo v pravidla.txt.")
+                    st.info(txt["no_rule"])
                 
-                # Zervený nebo zelený box pro parametry
+                # Červený box pro parametry
                 if parametry_text and parametry_text.strip():
-                    st.error("**Povinné parametry v XML struktuře:**")
+                    st.error(txt["params_label"])
                     
                     for param in parametry_text.split(','):
                         p_cisty = param.strip()
                         if not p_cisty:
                             continue
                         
-                        # CHYTRÝ GENERÁTOR UKÁZKY HODNOTY
+                        # CHYTRÝ GENERÁTOR UKÁZKY HODNOTY (Názvy tagů zůstávají z DB, hodnoty se přizpůsobí)
                         p_lower = p_cisty.lower()
-                        priklad_hodnoty = "Hodnota"  # Výchozí univerzální hodnota
+                        priklad_hodnoty = "Hodnota" if jazyk == "CZ" else "Value"
                         
-                        if "objem" in p_lower:
+                        if "objem" in p_lower or "volume" in p_lower:
                             priklad_hodnoty = "500 ml"
-                        elif "velikost" in p_lower:
+                        elif "velikost" in p_lower or "size" in p_lower:
                             priklad_hodnoty = "L"
-                        elif "barva" in p_lower:
-                            priklad_hodnoty = "Černá"
-                        elif "váha" in p_lower or "hmotnost" in p_lower:
+                        elif "barva" in p_lower or "color" in p_lower or "colour" in p_lower:
+                            priklad_hodnoty = "Černá" if jazyk == "CZ" else "Black"
+                        elif "váha" in p_lower or "hmotnost" in p_lower or "weight" in p_lower:
                             priklad_hodnoty = "1.5 kg"
-                        elif "materiál" in p_lower:
-                            priklad_hodnoty = "Bavlna"
-                        elif "šířka" in p_lower or "výška" in p_lower or "hloubka" in p_lower:
+                        elif "materiál" in p_lower or "material" in p_lower:
+                            priklad_hodnoty = "Bavlna" if jazyk == "CZ" else "Cotton"
+                        elif "šířka" in p_lower or "width" in p_lower or "výška" in p_lower or "height" in p_lower:
                             priklad_hodnoty = "60 cm"
                         
                         # Vykreslení krásného formátovaného XML kódu
@@ -93,8 +118,8 @@ if produkt_input.strip():
                         st.markdown(xml_ukazka)
                         
                 else:
-                    st.success("U této kategorie není vyžadován žádný povinný parametr.")
+                    st.success(txt["no_param"])
         else:
-            st.error("❌ Nepodařilo se najít žádnou dostatečně relevantní kategorii. Zkuste obecnější název.")
+            st.error(txt["err_relevant"])
     else:
-        st.error("❌ Nepodařilo se najít žádnou odpovídající kategorii.")
+        st.error(txt["err_empty"])
