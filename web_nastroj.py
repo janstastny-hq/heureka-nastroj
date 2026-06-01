@@ -67,7 +67,7 @@ if produkt_input.strip():
                 st.divider()
                 koncova_kat = vybrana_cesta.split('|')[-1].strip()
                 
-                # Načítání pro povinné a pravidla přes tvůj originální engine
+                # Načítání pro povinné a pravidla zůstává přes tvůj engine
                 pravidlo_text = nastroj.najdi_nejlepsi_shodu_v_db(koncova_kat.lower(), nastroj.pravidla_db)
                 parametry_text = nastroj.najdi_nejlepsi_shodu_v_db(koncova_kat.lower(), nastroj.parametry_db)
                 
@@ -113,11 +113,11 @@ if produkt_input.strip():
                 else:
                     st.success(txt["no_param"])
                 
-                # --- DOPORUČENÉ PARAMETRY (NA CHLUP STEJNÝ PRINCIP AKO POVINNÉ PARAMETRY) ---
+                # --- DOPORUČENÉ PARAMETRY (ZCELA NOVÉ VOLÁNÍ PŘES FUNKCI NAJDI_V2_PARAMETRY) ---
                 st.write("")  # Mezera pro přehlednost
                 
-                # Voláme tvůj originální vyhledávací engine na chlup stejně jako u povinných parametrů výše
-                vsechny_parametry_text = nastroj.najdi_nejlepsi_shodu_v_db(koncova_kat.lower(), nastroj.vsechny_parametry_db)
+                # Voláme novou neprůstřelnou metodu napsanou speciálně pro V2 soubor
+                vsechny_parametry_text = nastroj.najdi_v2_parametry(koncova_kat)
                 
                 if vsechny_parametry_text and vsechny_parametry_text.strip():
                     st.info(txt["all_params_label"])
@@ -125,7 +125,7 @@ if produkt_input.strip():
                     # Rozsekáme parametry podle čárek
                     list_parametru = [p.strip() for p in vsechny_parametry_text.split(',') if p.strip()]
                     
-                    # Zobrazíme je čistě vedle sebe oddělené lomítkem
+                    # Zobrazíme je vedle sebe v jednom řádku oddělené lomítkem
                     st.markdown(" / ".join([f"`{param}`" for param in list_parametru]))
                 else:
                     st.caption(txt["no_all_param"])
@@ -134,4 +134,4 @@ if produkt_input.strip():
         else:
             st.error(txt["err_relevant"])
     else:
-        st.error(txt["err_empty"])  # Opraven překlep z txt["empty"] na txt["err_empty"]
+        st.error(txt["err_empty"])

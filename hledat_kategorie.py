@@ -51,7 +51,6 @@ class HeurekaAllInOne:
                         continue
                     
                     oddelovac = None
-                    # 🚀 KLÍČOVÁ POJISTKA: Nejdříve zkontrolujeme naši specifickou pomlčku s mezerami z V2 souboru
                     if ' - ' in radek_s: oddelovac = ' - '
                     elif '=' in radek_s: oddelovac = '='
                     elif '–' in radek_s: oddelovac = '–'
@@ -61,14 +60,12 @@ class HeurekaAllInOne:
                     if oddelovac:
                         klic, hodnota = radek_s.split(oddelovac, 1)
                         cilovy_slovnik[klic.strip().lower()] = hodnota.strip()
-            print(f"✅ ÚSPĚCH: Databáze '{os.path.basename(cesta_k_souboru)}' úspěšně načtena ({len(cilovy_slovnik)} záznamů).")
         except Exception as e:
             pass
 
     def vyhledej_presnou_logikou(self, nazev_produktu):
         nazev_lower = nazev_produktu.lower()
         
-        # Inteligentní synonyma pro klíčové segmenty
         synonyma = {
             "iphone": "mobilní telefony",
             "ipad": "tablety",
@@ -105,7 +102,6 @@ class HeurekaAllInOne:
         zaklady_hledanych_slov = [dej_zaklad_slova(s) for s in puvodni_slova]
         vysledky = []
         
-        # DETEKCE MOBILU: kontrolujeme, zda uživatel zadal jakoukoliv variantu slova mobil/telefon
         hleda_mobil = any(dej_zaklad_slova(m) in zaklady_hledanych_slov for m in ["mobil", "telefon", "tel", "phone"])
 
         for kat in self.kategorie:
@@ -132,7 +128,6 @@ class HeurekaAllInOne:
                 if pocet_shodnych_slov > 1:
                     body += (pocet_shodnych_slov - 1) * 150
                 
-                # Jackpot za přesný název koncové kategorie (např. "bazény", "mobilní telefony")
                 if len(zaklady_konce_kat) == 1 and any(z_slovo == zaklady_konce_kat[0] for z_slovo in zaklady_hledanych_slov):
                     body += 5000
                 
@@ -140,11 +135,9 @@ class HeurekaAllInOne:
                     if z_kat not in zaklady_hledanych_slov:
                         body -= 10
 
-                # 🚀 ODCHYCOVACÍ POJISTKA PRO MOBILY
                 if hleda_mobil and "mobilní telefony" in posledni_sekce:
-                    body += 8000  # Obří bonus vystřelí hlavní sekci mobilů nad příslušenství
+                    body += 8000
 
-                # Penalizace příslušenství, pokud uživatel nehledá vyloženě pouzdro/obal
                 if "příslušenství" in posledni_sekce or "pouzdra" in posledni_sekce or "kryty" in posledni_sekce or "chemie" in posledni_sekce:
                     if not any(p in zaklady_hledanych_slov for p in ["pouzdro", "obal", "kryt", "drzak", "prislusenstvi", "chemie", "filtrace"]):
                         body -= 1500
@@ -189,4 +182,17 @@ class HeurekaAllInOne:
             if zaklad_hledaneho in zaklaw_db or zaklaw_db in zaklad_hledaneho:
                 return databaze[klic_db]
                 
+        return None
+
+    # 🚀 NOVÁ NEPRŮSTŘELNÁ FUNKCE EXKLUZIVNĚ PRO V2 DATABÁZI
+    def najdi_v2_parametry(self, kategorie_nazev):
+        kat_cista = kategorie_nazev.lower().strip()
+        # Přímý zásah do černého
+        if kat_cista in self.vsechny_parametry_db:
+            return self.vsechny_parametry_db[kat_cista]
+        
+        # Pojistka pro částečnou textovou shodu v klíčích
+        for klic in self.vsechny_parametry_db.keys():
+            if klic == kat_cista or klic in kat_cista or kat_cista in klic:
+                return self.vsechny_parametry_db[klic]
         return None
