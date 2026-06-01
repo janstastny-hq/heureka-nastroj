@@ -93,7 +93,11 @@ class HeurekaAllInOne:
         hleda_mobil = any(m in nazev_lower for m in ["mobil", "tel", "phon"])
 
         for radek in databaze_kategorii:
-            # ČIŠTĚNÍ: Odstraníme XML značky kompletně a hned na začátku!
+            # FILTR: Pokud řádek obsahuje pouze CATEGORY_NAME, tak ho rovnou přeskočíme! Chceme jen kompletní FULLNAME cesty.
+            if "<CATEGORY_NAME>" in radek:
+                continue
+
+            # ČIŠTĚNÍ: Odstraníme XML značky kompletně
             cista_cesta = radek.replace("<CATEGORY_FULLNAME>", "").replace("</CATEGORY_FULLNAME>", "").strip()
             cesta_lower = cista_cesta.lower()
             
@@ -105,7 +109,11 @@ class HeurekaAllInOne:
             if pocet_shod > 0 or (hleda_mobil and "mobilní telefony" in cesta_lower):
                 skore = (pocet_shod / len(cista_slova)) * 100 if cista_slova else 0
                 
-                koncova_kat = cista_cesta.split('|')[-1].lower()
+                # Kontrola, že tam vůbec ta cesta s oddělovačem je
+                if "|" in cista_cesta:
+                    koncova_kat = cista_cesta.split('|')[-1].lower()
+                else:
+                    koncova_kat = cista_cesta.lower()
                 
                 # Pokud uživatel napsal slovo z koncové kategorie, získá obří výhodu
                 for s in cista_slova:
@@ -122,7 +130,7 @@ class HeurekaAllInOne:
                         skore -= 500  # Odsuneme doplňky dolů
 
                 vysledky.append({
-                    'cesta': cista_cesta, # Tady předáváme 100% vyčištěnou cestu bez XML
+                    'cesta': cista_cesta,
                     'shody': skore
                 })
 
