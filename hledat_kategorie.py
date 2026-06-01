@@ -60,12 +60,16 @@ class HeurekaAllInOne:
 
     def vyhledej_presnou_logikou(self, nazev_produktu):
         nazev_lower = nazev_produktu.lower()
+        
+        # Přidáme inteligentní synonyma pro nejčastější věci, aby vyskočila správná hlavní sekce
         synonyma = {
             "iphone": "mobilní telefony",
             "ipad": "tablety",
             "airpods": "sluchátka",
             "playstation": "herní konzole",
-            "xbox": "herní konzole"
+            "xbox": "herní konzole",
+            "marimex": "bazény",
+            "intex": "bazény"
         }
 
         rozsireny_nazev = nazev_produktu
@@ -93,7 +97,6 @@ class HeurekaAllInOne:
 
         zaklady_hledanych_slov = [dej_zaklad_slova(s) for s in puvodni_slova]
         vysledky = []
-        hleda_mobil = any(m in nazev_lower for m in ["mobil", "tel", "phon"])
 
         for kat in self.kategorie:
             kat_lower = kat.lower()
@@ -109,29 +112,28 @@ class HeurekaAllInOne:
             for z_slovo in zaklady_hledanych_slov:
                 for z_kat in zaklady_konce_kat:
                     if z_slovo == z_kat:
-                        body += 40
+                        body += 100  # Zvýšený základní bod za shodu s koncovou kategorií
                         pocet_shodnych_slov += 1
                     elif z_slovo in z_kat or z_kat in z_slovo:
-                        body += 20
+                        body += 50
                         pocet_shodnych_slov += 1
 
             if pocet_shodnych_slov > 0:
                 if pocet_shodnych_slov > 1:
-                    body += (pocet_shodnych_slov - 1) * 60
+                    body += (pocet_shodnych_slov - 1) * 150
                 
-                if len(zaklady_konce_kat) == 1:
-                    body += 15
+                # Pokud se koncová sekce jmenuje PŘESNĚ jako jedno z našich hledaných klíčových slov (např. "bazény")
+                if len(zaklady_konce_kat) == 1 and any(z_slovo == zaklady_konce_kat[0] for z_slovo in zaklady_hledanych_slov):
+                    body += 5000  # Absolutní jackpot – vystřelí hlavní sekci nahoru
                 
                 for z_kat in zaklady_konce_kat:
                     if z_kat not in zaklady_hledanych_slov:
-                        body -= 5
+                        body -= 10
 
-                if hleda_mobil and "mobilní telefony" in posledni_sekce:
-                    body += 5000
-                    
-                if "příslušenství" in posledni_sekce or "pouzdra" in posledni_sekce or "kryty" in posledni_sekce:
-                    if not any(p in zaklady_hledanych_slov for p in ["pouzdro", "obal", "kryt", "drzak", "prislusenstvi"]):
-                        body -= 500
+                # Penalizace příslušenství a chemie, pokud uživatel nehledá vyloženě doplňky
+                if "příslušenství" in posledni_sekce or "chemie" in posledni_sekce or "filtrace" in posledni_sekce:
+                    if not any(p in zaklady_hledanych_slov for p in ["pouzdro", "obal", "kryt", "drzak", "prislusenstvi", "chemie", "filtrace", "tablety"]):
+                        body -= 800
 
                 if body > 0:
                     vysledky.append({
