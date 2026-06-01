@@ -113,29 +113,31 @@ if produkt_input.strip():
                 else:
                     st.success(txt["no_param"])
                 
-                # --- NOVÝ MODUL: DOPORUČENÉ PARAMETRY (Z PARAMETRY-V2.TXT VIA POSLEDNÍ SLOVO) ---
+                # --- NOVÝ MODUL: DOPORUČENÉ PARAMETRY (Z PARAMETRY-V2.TXT VIA FULLPATH MATCH) ---
                 st.write("")  # Drobná estetická mezera
                 
                 vsechny_parametry_text = None
                 koncova_kat_lower = koncova_kat.lower().strip()
                 
-                # Izolujeme pouze úplně poslední slovo z koncové kategorie (např. z "Řazení na kolo" zbyde "kolo")
+                # Izolujeme i poslední slovo pro maximální jistotu (např. "bazény")
                 slova_konce = koncova_kat_lower.split()
                 posledni_slovo = slova_konce[-1].strip() if slova_konce else ""
                 
-                # 1. Krok: Hledáme v obří V2 databázi čistě podle tohoto posledního slova (např. "bazény")
-                if posledni_slovo in nastroj.vsechny_parametry_db:
+                # 1. Krok: Zkusíme přímou shodu, pokud by klíč byl čistě název kategorie
+                if koncova_kat_lower in nastroj.vsechny_parametry_db:
+                    vsechny_parametry_text = nastroj.vsechny_parametry_db[koncova_kat_lower]
+                elif posledni_slovo in nastroj.vsechny_parametry_db:
                     vsechny_parametry_text = nastroj.vsechny_parametry_db[posledni_slovo]
                 else:
-                    # 2. Krok: Záložní varianta, pokud by klíč v DB byl víceslovný
-                    if koncova_kat_lower in nastroj.vsechny_parametry_db:
-                        vsechny_parametry_text = nastroj.vsechny_parametry_db[koncova_kat_lower]
-                    else:
-                        # 3. Krok: Poslední záchrana – prohledání klíčů přes podřetězec
-                        for klic_db in nastroj.vsechny_parametry_db.keys():
-                            if posledni_slovo in klic_db or klic_db in posledni_slovo:
-                                vsechny_parametry_text = nastroj.vsechny_parametry_db[klic_db]
-                                break
+                    # 2. Krok: Prohledáme klíče v DB (dlouhé cesty z tvého txt souboru)
+                    for klic_db in nastroj.vsechny_parametry_db.keys():
+                        # Pokud vybraná koncová kategorie (např. "bazény") je obsažena v klíči DB (např. "dům a zahrada | bazény")
+                        if koncova_kat_lower in klic_db or posledni_slovo == klic_db.split('|')[-1].strip():
+                            vsechny_parametry_text = nastroj.vsechny_parametry_db[klic_db]
+                            break
+                        elif klic_db in koncova_kat_lower:
+                            vsechny_parametry_text = nastroj.vsechny_parametry_db[klic_db]
+                            break
                 
                 if vsechny_parametry_text and vsechny_parametry_text.strip():
                     st.info(txt["all_params_label"])
