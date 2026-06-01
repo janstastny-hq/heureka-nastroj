@@ -59,6 +59,8 @@ class HeurekaAllInOne:
             pass
 
     def vyhledej_presnou_logikou(self, nazev_produktu):
+        import difflib
+        
         nazev_lower = nazev_produktu.lower()
         synonyma = {
             "iphone": "mobilní telefony",
@@ -67,6 +69,21 @@ class HeurekaAllInOne:
             "playstation": "herní konzole",
             "xbox": "herní konzole"
         }
+
+        # --- NAŠEPTÁVAČ / KONTROLA PŘEKLEPŮ ---
+        # Seznam klíčových slov, u kterých chceme hlídat překlepy
+        zavedena_slova = ["iphone", "ipad", "airpods", "playstation", "xbox", "samsung", "xiaomi", "nintendo", "huawei", "lenovo"]
+        navrh_opravy = None
+        
+        slova_uzivatele = nazev_lower.split()
+        for i, slovo in enumerate(slova_uzivatele):
+            # Pokud slovo není přesně v našem seznamu, zkusíme najít velmi blízkou shodu (aspoň na 75 %)
+            blizka_shoda = difflib.get_close_matches(slovo, zavedena_slova, n=1, cutoff=0.75)
+            if blizka_shoda and blizka_shoda[0] != slovo:
+                slova_uzivatele[i] = blizka_shoda[0]
+                navrh_opravy = " ".join(slova_uzivatele)
+                break # Stačí opravit jedno hlavní slovo
+        # --------------------------------------
 
         rozsireny_nazev = nazev_produktu
         for klic, vyznam in synonyma.items():
@@ -77,7 +94,7 @@ class HeurekaAllInOne:
         if not cista_slova:
             return []
 
-        # SUPER-POJISTKA: Pokud self.kategorie_db neexistuje nebo je prázdná, načteme ji natvrdo přímo ze souboru
+        # SUPER-POJISTKA: Pokud self.kategorie_db neexistuje, načteme ji natvrdo
         databaze_kategorii = []
         if hasattr(self, 'kategorie_db') and self.kategorie_db:
             databaze_kategorii = self.kategorie_db
@@ -88,16 +105,12 @@ class HeurekaAllInOne:
                     databaze_kategorii = [line.strip() for line in f if line.strip()]
 
         vysledky = []
-
-        # POJISTKA PRO MOBILY: Detekujeme, zda uživatel nehledá mobil/telefon/iphone
         hleda_mobil = any(m in nazev_lower for m in ["mobil", "tel", "phon"])
 
         for radek in databaze_kategorii:
-            # FILTR: Pokud řádek obsahuje pouze CATEGORY_NAME, tak ho rovnou přeskočíme! Chceme jen kompletní FULLNAME cesty.
             if "<CATEGORY_NAME>" in radek:
                 continue
 
-            # ČIŠTĚNÍ: Odstraníme XML značky kompletně
             cista_cesta = radek.replace("<CATEGORY_FULLNAME>", "").replace("</CATEGORY_FULLNAME>", "").strip()
             cesta_lower = cista_cesta.lower()
             
@@ -109,32 +122,28 @@ class HeurekaAllInOne:
             if pocet_shod > 0 or (hleda_mobil and "mobilní telefony" in cesta_lower):
                 skore = (pocet_shod / len(cista_slova)) * 100 if cista_slova else 0
                 
-                # Kontrola, že tam vůbec ta cesta s oddělovačem je
                 if "|" in cista_cesta:
                     koncova_kat = cista_cesta.split('|')[-1].lower()
                 else:
                     koncova_kat = cista_cesta.lower()
                 
-                # Pokud uživatel napsal slovo z koncové kategorie, získá obří výhodu
                 for s in cista_slova:
                     if s in koncova_kat:
                         skore += 300
                 
-                # --- NEPRŮSTŘELNÁ BODOVÁ POJISTKA ---
                 if hleda_mobil and "mobilní telefony" in koncova_kat:
-                    skore += 5000  # Vystřelí hlavní kategorii nad doplňky
+                    skore += 5000
                 
-                # Penalizace pro doplňky a pouzdra, pokud je uživatel vyloženě nehledá
                 if "příslušenství" in koncova_kat or "pouzdra" in koncova_kat or "držáky" in koncova_kat or "kryty" in koncova_kat:
                     if not any(p in cista_slova for p in ["pouzdro", "obal", "kryt", "drzak", "držík", "prislusenstvi"]):
-                        skore -= 500  # Odsuneme doplňky dolů
+                        skore -= 500
 
                 vysledky.append({
                     'cesta': cista_cesta,
-                    'shody': skore
+                    'shody': skore,
+                    'navrh_opravy': navrh_opravy # Přibalíme návrh opravy k výsledkům
                 })
 
-        # Odstranění duplicit
         videno = set()
         unikatni_vysledky = []
         for v in vysledky:

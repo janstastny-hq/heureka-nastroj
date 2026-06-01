@@ -50,9 +50,33 @@ st.write(txt["desc"])
 
 st.divider()
 
-# Vyhledávací pole pro produkt
-produkt_input = st.text_input(txt["input_label"], placeholder=txt["input_placeholder"])
+# --- PAMĚŤ PRO AUTOMATICKOU OPRAVU TEXTU ---
+if "opraveny_text" not in st.session_state:
+    st.session_state["opraveny_text"] = ""
 
+# Vyhledávací pole pro produkt propojené s pamětí oprav
+produkt_input = st.text_input(
+    txt["input_label"], 
+    value=st.session_state["opraveny_text"] if st.session_state["opraveny_text"] else "",
+    placeholder=txt["input_placeholder"]
+)
+
+# --- INTEGROVANÝ KLIKACÍ NAŠEPTÁVAČ ---
+if produkt_input.strip():
+    test_shod = nastroj.vyhledej_presnou_logikou(produkt_input.strip())
+    if test_shod and test_shod[0].get('navrh_opravy'):
+        opravene_slovo = test_shod[0]['navrh_opravy']
+        
+        # Zobrazíme klikací nápovědu
+        if st.button(f"💡 Mysleli jste: **{opravene_slovo}**?", type="secondary"):
+            st.session_state["opraveny_text"] = opravene_slovo
+            st.rerun()
+
+# Pokud uživatel začne psát ručně něco úplně jiného, přepíšeme paměť novým textem
+if produkt_input.strip() and produkt_input.strip() != st.session_state["opraveny_text"]:
+    st.session_state["opraveny_text"] = produkt_input.strip()
+
+# --- SAMOTNÉ VYHLEDÁVÁNÍ A ZOBRAZENÍ VÝSLEDKŮ ---
 if produkt_input.strip():
     shody = nastroj.vyhledej_presnou_logikou(produkt_input.strip())
     
@@ -90,7 +114,7 @@ if produkt_input.strip():
                         if not p_cisty:
                             continue
                         
-                        # CHYTRÝ GENERÁTOR UKÁZKY HODNOTY (Názvy tagů zůstávají z DB, hodnoty se přizpůsobí)
+                        # CHYTRÝ GENERÁTOR UKÁZKY HODNOTY
                         p_lower = p_cisty.lower()
                         priklad_hodnoty = "Hodnota" if jazyk == "CZ" else "Value"
                         
