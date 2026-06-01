@@ -10,7 +10,7 @@ st.set_page_config(
     layout="centered"
 )
 
-# Smazán @st.cache_resource, aby se databáze natvrdo načetly znovu a nezůstávaly viset v paměti
+# Bez cache dekorátoru, aby se databáze natvrdo načetly znovu a nezůstávaly viset v paměti
 def nacti_nastroj():
     return HeurekaAllInOne()
 
@@ -113,19 +113,21 @@ if produkt_input.strip():
                 else:
                     st.success(txt["no_param"])
                 
-                # --- VYLEPŠENÝ MODUL: DOPORUČENÉ PARAMETRY (S VYUŽITÍM ENGINE NAJDI_NEJLEPSI_SHODU_V_DB) ---
+                # --- DEFINITIVNÍ ČISTÉ PÁROVÁNÍ PRO PARAMETRY-V2.TXT ---
                 st.write("")  # Drobná estetická mezera
                 
+                vsechny_parametry_text = None
                 koncova_kat_lower = koncova_kat.lower().strip()
-                slova_konce = koncova_kat_lower.split()
-                posledni_slovo = slova_konce[-1].strip() if slova_konce else koncova_kat_lower
                 
-                # Voláme tvůj originální vyhledávací engine s ořezáváním koncovek podle POSLEDNÍHO sloVA
-                vsechny_parametry_text = nastroj.najdi_nejlepsi_shodu_v_db(posledni_slovo, nastroj.vsechny_parametry_db)
-                
-                # Pokud by se čistě poslední slovo netrefilo, zkusíme jako zálohu celou koncovou kategorii
-                if not vsechny_parametry_text:
-                    vsechny_parametry_text = nastroj.najdi_nejlepsi_shodu_v_db(koncova_kat_lower, nastroj.vsechny_parametry_db)
+                # 1. Krok: Úplně přímé porovnání s plným slovem (např. "bazény" == "bazény", "auta" == "auta")
+                if koncova_kat_lower in nastroj.vsechny_parametry_db:
+                    vsechny_parametry_text = nastroj.vsechny_parametry_db[koncova_kat_lower]
+                else:
+                    # 2. Krok: Pokud se to stoprocentně netrefí (třeba kvůli velikosti písmen), projdeme klíče napřímo
+                    for klic_db, hodnota_db in nastroj.vsechny_parametry_db.items():
+                        if klic_db == koncova_kat_lower or klic_db in koncova_kat_lower or koncova_kat_lower in klic_db:
+                            vsechny_parametry_text = hodnota_db
+                            break
                 
                 if vsechny_parametry_text and vsechny_parametry_text.strip():
                     st.info(txt["all_params_label"])
@@ -137,7 +139,7 @@ if produkt_input.strip():
                     st.markdown(" / ".join([f"`{param}`" for param in list_parametru]))
                 else:
                     st.caption(txt["no_all_param"])
-                # -----------------------------------------------------------------------------------------------
+                # -------------------------------------------------------------------------------
                         
         else:
             st.error(txt["err_relevant"])
