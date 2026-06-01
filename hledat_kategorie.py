@@ -60,6 +60,7 @@ class HeurekaAllInOne:
 
     def vyhledej_presnou_logikou(self, nazev_produktu):
         import difflib
+        import unicodedata
         
         nazev_lower = nazev_produktu.lower()
         synonyma = {
@@ -77,19 +78,18 @@ class HeurekaAllInOne:
                 with open("kategorie.txt", "r", encoding="utf-8") as f:
                     databaze_kategorii = [line.strip() for line in f if line.strip()]
 
-        # Pomocná funkce pro odstranění diakritiky, aby porovnávač našel i baze -> bazén
+        # NEPRŮSTŘELNÁ FUNKCE: Odstraní diakritiku (háčky/čárky) z jakéhokoliv textu (CZ i SK)
         def bez_diakritiky(text):
-            intab = "áäčďéěíľĺňóôŕřšťúůýž"
-            outtab = "aacdeeillnoorrstuuuyz"
-            trantab = str.maketrans(intab, outtab)
-            return text.translate(trantab)
+            text_str = str(text).lower()
+            return "".join(c for c in unicodedata.normalize('NFD', text_str) if unicodedata.category(c) != 'Mn')
 
         # --- DYNAMICKÝ NAŠEPTÁVAČ ZE VŠECH SLOV V DATABÁZI ---
         vsechna_slova_heureky = set()
-        slovnik_bez_diakritiky = {}
+        slovnik_bez_diakritiky = {} # Mapování "bazen" -> "bazén" pro zpětnou opravu
         
         for radek in databaze_kategorii:
             cesta_cista = radek.replace("<CATEGORY_FULLNAME>", "").replace("</CATEGORY_FULLNAME>", "").replace("<CATEGORY_NAME>", "").replace("</CATEGORY_NAME>", "")
+            # OPRAVENO: cesta_cista místo chybného cesta_cesta
             for s in cesta_cista.replace("|", " ").replace(",", " ").replace(".", " ").split():
                 slovo_clean = s.lower().strip()
                 if len(slovo_clean) >= 3:
