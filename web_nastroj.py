@@ -2,10 +2,8 @@ import streamlit as st
 import sys
 import os
 
-# Naimportujeme ten opravený dlouhý motor se skloňováním
 from hledat_kategorie import HeurekaAllInOne
 
-# Nastavení vzhledu stránky
 st.set_page_config(
     page_title="Heureka All-In-One",
     page_icon="🤖",
@@ -18,16 +16,14 @@ def nacti_nastroj():
 
 nastroj = nacti_nastroj()
 
-# --- JAZYKOVÝ PŘEPÍNAČ NAHOŘE ---
 jazyk = st.radio(
     "🌐 Language / Jazyk:",
     options=["CZ", "EN"],
     horizontal=True
 )
 
-# Definice textů pro rozhraní podle vybraného jazyka
 txt = {
-    "title": "🤖 Heureka All-In-One" if jazyk == "CZ" else "🤖 Heureka All-In-One",
+    "title": "🤖 Heureka All-In-One",
     "subtitle": "Chytré vyhledávání kategorií a systémových pravidel" if jazyk == "CZ" else "Smart search for categories and system rules",
     "desc": "Zadejte název produktu z e-shopu a algoritmus se postará o zbytek." if jazyk == "CZ" else "Enter the product name from the e-shop and the algorithm will do the rest.",
     "input_label": "📝 Název produktu z eshopu:" if jazyk == "CZ" else "📝 Product name from e-shop:",
@@ -43,34 +39,17 @@ txt = {
     "err_empty": "❌ Nepodařilo se najít žádnou odpovídající kategorii." if jazyk == "CZ" else "❌ No matching category found."
 }
 
-# Hlavní nadpisy vizuálu (používají slovník txt)
 st.title(txt["title"])
 st.subheader(txt["subtitle"])
 st.write(txt["desc"])
 
 st.divider()
 
-# --- PAMĚŤ PRO AUTOMATICKOU OPRAVU TEXTU ---
-if "opraveny_text" not in st.session_state:
-    st.session_state["opraveny_text"] = ""
+produkt_input = st.text_input(txt["input_label"], placeholder=txt["input_placeholder"])
 
-# Vyhledávací pole pro produkt propojené s pamětí oprav
-produkt_input = st.text_input(
-    txt["input_label"], 
-    value=st.session_state["opraveny_text"] if st.session_state["opraveny_text"] else "",
-    placeholder=txt["input_placeholder"]
-)
-
-# --- SAMOTNÉ VYHLEDÁVÁNÍ A ZOBRAZENÍ VÝSLEDKŮ ---
 if produkt_input.strip():
-    # Spustíme čisté vyhledávání podle zadaného textu
     shody = nastroj.vyhledej_presnou_logikou(produkt_input.strip())
     
-    # Pojistka pro reset paměti: pokud uživatel píše ručně a text neodpovídá paměti, aktualizujeme ji
-    if produkt_input.strip() and produkt_input.strip() != st.session_state["opraveny_text"]:
-        st.session_state["opraveny_text"] = produkt_input.strip()
-
-    # SCÉNÁŘ A: Klasické vyhledávání našlo výsledky -> ihned je vykreslíme, nápověda spí
     if shody:
         st.info(txt["type_classic"])
         
@@ -127,57 +106,10 @@ if produkt_input.strip():
 ```"""
                         st.markdown(f"**{p_cisty}:**")
                         st.markdown(xml_ukazka)
+                        
                 else:
                     st.success(txt["no_param"])
         else:
             st.error(txt["err_relevant"])
-
-    # SCÉNÁŘ B: Vyhledávání nenašlo vůbec nic -> teprve teď nastupuje kontrola překlepů
     else:
-        import difflib
-        import unicodedata
-        
-        def bez_diakritiky(text):
-            text_str = str(text).lower()
-            return "".join(c for c in unicodedata.normalize('NFD', text_str) if unicodedata.category(c) != 'Mn')
-            
-        # Sestavíme slovník slov z Heureky
-        vsechna_slova = set()
-        slovnik_ascii = {}
-        for kat in nastroj.kategorie:
-            cesta_cista = kat.replace("|", " ").replace(",", " ").replace(".", " ")
-            for s in cesta_cista.split():
-                w = s.lower().strip()
-                if len(w) >= 3:
-                    vsechna_slova.add(w)
-                    slovnik_ascii[bez_diakritiky(w)] = w
-                    
-        slovnik_pro_opravu = list(vsechna_slova)
-        slovnik_pro_opravu_ascii = list(slovnik_ascii.keys())
-        
-        navrh_opravy = None
-        slova_uzivatele = produkt_input.strip().lower().split()
-        
-        for i, slovo in enumerate(slova_uzivatele):
-            if slovo not in slovnik_pro_opravu:
-                blizka_shoda = difflib.get_close_matches(slovo, slovnik_pro_opravu, n=1, cutoff=0.60)
-                if blizka_shoda:
-                    slova_uzivatele[i] = blizka_shoda[0]
-                    navrh_opravy = " ".join(slova_uzivatele)
-                    break
-                else:
-                    slovo_ascii = bez_diakritiky(slovo)
-                    blizka_shoda_ascii = difflib.get_close_matches(slovo_ascii, slovnik_pro_opravu_ascii, n=1, cutoff=0.60)
-                    if blizka_shoda_ascii:
-                        slova_uzivatele[i] = slovnik_ascii[blizka_shoda_ascii[0]]
-                        navrh_opravy = " ".join(slova_uzivatele)
-                        break
-                        
-        # Pokud máme rozumný návrh opravy, ukážeme klikací tlačítko
-        if navrh_opravy and navrh_opravy != produkt_input.strip().lower():
-            if st.button(f"💡 Mysleli jste: **{navrh_opravy}**?", type="secondary"):
-                st.session_state["opraveny_text"] = navrh_opravy
-                st.rerun()
-        else:
-            # Pokud nemáme ani návrh opravy překlepu, vyhodíme čistou červenou chybu
-            st.error(txt["err_empty"])
+        st.error(txt["err_empty"])
