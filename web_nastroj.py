@@ -61,24 +61,21 @@ produkt_input = st.text_input(
     placeholder=txt["input_placeholder"]
 )
 
-# --- INTEGROVANÝ KLIKACÍ NAŠEPTÁVAČ ---
-if produkt_input.strip():
-    test_shod = nastroj.vyhledej_presnou_logikou(produkt_input.strip())
-    if test_shod and test_shod[0].get('navrh_opravy'):
-        opravene_slovo = test_shod[0]['navrh_opravy']
-        
-        # Zobrazíme klikací nápovědu
-        if st.button(f"💡 Mysleli jste: **{opravene_slovo}**?", type="secondary"):
-            st.session_state["opraveny_text"] = opravene_slovo
-            st.rerun()
-
-# Pokud uživatel začne psát ručně něco úplně jiného, přepíšeme paměť novým textem
-if produkt_input.strip() and produkt_input.strip() != st.session_state["opraveny_text"]:
-    st.session_state["opraveny_text"] = produkt_input.strip()
-
 # --- SAMOTNÉ VYHLEDÁVÁNÍ A ZOBRAZENÍ VÝSLEDKŮ ---
 if produkt_input.strip():
     shody = nastroj.vyhledej_presnou_logikou(produkt_input.strip())
+    
+    # KONTROLA PŘEKLEPŮ: Pokud nám motor vrátil dynamický návrh z celé DB Heureky, ukážeme ho
+    if shody and shody[0].get('navrh_opravy'):
+        opravene_slovo = shody[0]['navrh_opravy']
+        if opravene_slovo != produkt_input.strip().lower():
+            if st.button(f"💡 Mysleli jste: **{opravene_slovo}**?", type="secondary"):
+                st.session_state["opraveny_text"] = opravene_slovo
+                st.rerun()
+
+    # Resetujeme stav mezipaměti, pokud uživatel píše dál ručně
+    if produkt_input.strip() and produkt_input.strip() != st.session_state["opraveny_text"]:
+        st.session_state["opraveny_text"] = produkt_input.strip()
     
     if shody:
         st.info(txt["type_classic"])
@@ -114,7 +111,6 @@ if produkt_input.strip():
                         if not p_cisty:
                             continue
                         
-                        # CHYTRÝ GENERÁTOR UKÁZKY HODNOTY
                         p_lower = p_cisty.lower()
                         priklad_hodnoty = "Hodnota" if jazyk == "CZ" else "Value"
                         
@@ -140,7 +136,6 @@ if produkt_input.strip():
 ```"""
                         st.markdown(f"**{p_cisty}:**")
                         st.markdown(xml_ukazka)
-                        
                 else:
                     st.success(txt["no_param"])
         else:

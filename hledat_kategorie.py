@@ -70,31 +70,7 @@ class HeurekaAllInOne:
             "xbox": "herní konzole"
         }
 
-        # --- NAŠEPTÁVAČ / KONTROLA PŘEKLEPŮ ---
-        # Seznam klíčových slov, u kterých chceme hlídat překlepy
-        zavedena_slova = ["iphone", "ipad", "airpods", "playstation", "xbox", "samsung", "xiaomi", "nintendo", "huawei", "lenovo"]
-        navrh_opravy = None
-        
-        slova_uzivatele = nazev_lower.split()
-        for i, slovo in enumerate(slova_uzivatele):
-            # Pokud slovo není přesně v našem seznamu, zkusíme najít velmi blízkou shodu (aspoň na 75 %)
-            blizka_shoda = difflib.get_close_matches(slovo, zavedena_slova, n=1, cutoff=0.75)
-            if blizka_shoda and blizka_shoda[0] != slovo:
-                slova_uzivatele[i] = blizka_shoda[0]
-                navrh_opravy = " ".join(slova_uzivatele)
-                break # Stačí opravit jedno hlavní slovo
-        # --------------------------------------
-
-        rozsireny_nazev = nazev_produktu
-        for klic, vyznam in synonyma.items():
-            if klic in nazev_lower:
-                rozsireny_nazev += f" {vyznam}"
-
-        cista_slova = [s.lower() for s in rozsireny_nazev.split() if len(s) >= 2]
-        if not cista_slova:
-            return []
-
-        # SUPER-POJISTKA: Pokud self.kategorie_db neexistuje, načteme ji natvrdo
+        # SUPER-POJISTKA PRO NAČTENÍ DATABÁZE
         databaze_kategorii = []
         if hasattr(self, 'kategorie_db') and self.kategorie_db:
             databaze_kategorii = self.kategorie_db
@@ -104,8 +80,48 @@ class HeurekaAllInOne:
                 with open("kategorie.txt", "r", encoding="utf-8") as f:
                     databaze_kategorii = [line.strip() for line in f if line.strip()]
 
+        # --- DYNAMICKÝ NAŠEPTÁVAČ ZE VŠECH SLOV V DATABÁZI ---
+        # Vytáhneme si všechna unikátní čistá slova, která Heureka v kategoriích vůbec používá
+        vsechna_slova_heureky = set()
+        for radek in databaze_kategorii:
+            cesta_cista = radek.replace("<CATEGORY_FULLNAME>", "").replace("</CATEGORY_FULLNAME>", "").replace("<CATEGORY_NAME>", "").replace("</CATEGORY_NAME>", "")
+            # Rozdělíme na slova, smažeme interpunkci a uložíme malým písmem
+            for s in cesta_cista.replace("|", " ").replace(",", " ").replace(".", " ").split():
+                if len(s) >= 3:
+                    vsechna_slova_heureky.add(s.lower())
+        
+        # Převedeme na seznam pro porovnávač překlepů
+        slovnik_pro_opravu = list(vsechna_slova_heureky)
+        
+        navrh_opravy = None
+        slova_uzivatele = nazev_lower.split()
+        
+        for i, slovo in enumerate(slova_uzivatele):
+            # Pokud slovo není v Heurece a je to zjevně překlep (např. baze, iphoone, samsug)
+            if slovo not in slovnik_pro_opravu:
+                # Najdeme nejbližší slovo z celého stromu Heureky (shoda aspoň 70 %)
+                blizka_shoda = difflib.get_close_matches(slovo, slovnik_pro_opravu, n=1, cutoff=0.70)
+                if blizka_shoda:
+                    slova_uzivatele[i] = blizka_shoda[0]
+                    navrh_opravy = " ".join(slova_uzivatele)
+                    break
+        # -----------------------------------------------------
+
+        # Pokud máme opravený text, použijeme ho pro vnitřní vyhledávání, aby uživatel rovnou viděl výsledky
+        hledany_text_interni = navrh_opravy if navrh_opravy else nazev_produktu
+        hledany_text_lower = hledany_text_interni.lower()
+
+        rozsireny_nazev = hledany_text_interni
+        for klic, vyznam in synonyma.items():
+            if klic in hledany_text_lower:
+                rozsireny_nazev += f" {vyznam}"
+
+        cista_slova = [s.lower() for s in rozsireny_nazev.split() if len(s) >= 2]
+        if not cista_slova:
+            return []
+
         vysledky = []
-        hleda_mobil = any(m in nazev_lower for m in ["mobil", "tel", "phon"])
+        hleda_mobil = any(m in hledany_text_lower for m in ["mobil", "tel", "phon"])
 
         for radek in databaze_kategorii:
             if "<CATEGORY_NAME>" in radek:
@@ -141,7 +157,7 @@ class HeurekaAllInOne:
                 vysledky.append({
                     'cesta': cista_cesta,
                     'shody': skore,
-                    'navrh_opravy': navrh_opravy # Přibalíme návrh opravy k výsledkům
+                    'navrh_opravy': navrh_opravy
                 })
 
         videno = set()
