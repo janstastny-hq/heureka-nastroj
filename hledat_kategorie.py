@@ -73,19 +73,26 @@ class HeurekaAllInOne:
             if klic in nazev_lower:
                 rozsireny_nazev += f" {vyznam}"
 
-        # ČISTÉ ŘEŠENÍ: Rozdělíme dotaz na slova, ale už je nebudeme agresivně ořezávat.
-        # Robot se bude spoléhat na to, zda slovo v textu "začíná" nebo je jeho součástí (sub-string).
         cista_slova = [s.lower() for s in rozsireny_nazev.split() if len(s) >= 2]
-        
         if not cista_slova:
             return []
 
+        # SUPER-POJISTKA: Pokud self.kategorie_db neexistuje nebo je prázdná, načteme ji natvrdo přímo ze souboru
+        databaze_kategorii = []
+        if hasattr(self, 'kategorie_db') and self.kategorie_db:
+            databaze_kategorii = self.kategorie_db
+        else:
+            import os
+            if os.path.exists("kategorie.txt"):
+                with open("kategorie.txt", "r", encoding="utf-8") as f:
+                    databaze_kategorii = [line.strip() for line in f if line.strip()]
+
         vysledky = []
 
-        # POJISTKA: Detekujeme, zda uživatel nehledá mobil/telefon/iphone v jakémkoliv tvaru
+        # POJISTKA PRO MOBILY: Detekujeme, zda uživatel nehledá mobil/telefon/iphone
         hleda_mobil = any(m in nazev_lower for m in ["mobil", "tel", "phon"])
 
-        for radek in self.kategorie_db:
+        for radek in databaze_kategorii:
             # ČIŠTĚNÍ: Odstraníme XML značky, pokud v řádku jsou
             cista_cesta = radek.replace("<CATEGORY_FULLNAME>", "").replace("</CATEGORY_FULLNAME>", "").strip()
             cesta_lower = cista_cesta.lower()
@@ -105,10 +112,9 @@ class HeurekaAllInOne:
                     if s in koncova_kat:
                         skore += 300
                 
-                # --- NEPRŮSTŘELNÁ POJISTKA ---
-                # Pokud uživatel hledá mobil a tohle je PŘÍMO ta hlavní kategorie mobilních telefonů, dáme jí astronomické skóre
-                if hleda_mobil and koncova_kat.strip() == "mobilní telefony":
-                    skore += 5000  # Tohle ji vystřelí nad cokoliv jiného na světě
+                # --- NEPRŮSTŘELNÁ BODOVÁ POJISTKA ---
+                if hleda_mobil and "mobilní telefony" in koncova_kat:
+                    skore += 5000  # Vystřelí hlavní kategorii nad doplňky
                 
                 # Penalizace pro doplňky a pouzdra, pokud je uživatel vyloženě nehledá
                 if "příslušenství" in koncova_kat or "pouzdra" in koncova_kat or "držáky" in koncova_kat or "kryty" in koncova_kat:
