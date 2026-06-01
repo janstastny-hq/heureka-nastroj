@@ -10,6 +10,7 @@ st.set_page_config(
     layout="centered"
 )
 
+# Bez cache dekorátoru, aby Streamlit natvrdo prohledával čerstvé soubory
 def nacti_nastroj():
     return HeurekaAllInOne()
 
@@ -66,9 +67,10 @@ if produkt_input.strip():
                 st.divider()
                 koncova_kat = vybrana_cesta.split('|')[-1].strip()
                 
-                # Načítání pro povinné a pravidla přes tvůj originální engine
+                # Načítání pro VŠECHNY TŘI databáze na chlup stejným způsobem přes funkční engine
                 pravidlo_text = nastroj.najdi_nejlepsi_shodu_v_db(koncova_kat.lower(), nastroj.pravidla_db)
                 parametry_text = nastroj.najdi_nejlepsi_shodu_v_db(koncova_kat.lower(), nastroj.parametry_db)
+                vsechny_parametry_text = nastroj.najdi_nejlepsi_shodu_v_db(koncova_kat.lower(), nastroj.vsechny_parametry_db)
                 
                 st.markdown(f"{txt['rules_title']} `{koncova_kat}`")
                 
@@ -112,11 +114,8 @@ if produkt_input.strip():
                 else:
                     st.success(txt["no_param"])
                 
-                # --- DOPORUČENÉ PARAMETRY (ZCELA NOVÁ BEZPEČNÁ METODA) ---
+                # --- DOPORUČENÉ PARAMETRY (PROSTÝ TEXT V MODRÉM BOXU) ---
                 st.write("")  # Mezera pro přehlednost
-                
-                # Voláme novou neprůstřelnou metodu napsanou speciálně pro V2 soubor
-                vsechny_parametry_text = nastroj.najdi_presnou_shodu_v_v2(koncova_kat)
                 
                 if vsechny_parametry_text and vsechny_parametry_text.strip():
                     st.info(txt["all_params_label"])

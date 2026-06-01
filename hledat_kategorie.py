@@ -8,12 +8,8 @@ AI_DOSTUPNA = False
 AKTUALNI_SLOZKA = os.path.dirname(os.path.abspath(__file__))
 SOUBOR_KATEGORII = os.path.join(AKTUALNI_SLOZKA, 'kategorie.txt')
 SOUBOR_PARAMETRU = os.path.join(AKTUALNI_SLOZKA, 'parametry.txt')
+SOUBOR_PARAMETRU_V2 = os.path.join(AKTUALNI_SLOZKA, 'parametry-v2.txt') # Zpět klasická pomlčka
 SOUBOR_PRAVIDEL = os.path.join(AKTUALNI_SLOZKA, 'pravidla.txt')
-
-# Automatická detekce správné pomlčky v názvu souboru na disku
-SOUBOR_PARAMETRU_V2 = os.path.join(AKTUALNI_SLOZKA, 'parametry–v2.txt')
-if not os.path.exists(SOUBOR_PARAMETRU_V2):
-    SOUBOR_PARAMETRU_V2 = os.path.join(AKTUALNI_SLOZKA, 'parametry-v2.txt')
 
 class HeurekaAllInOne:
     def __init__(self):
@@ -158,9 +154,13 @@ class HeurekaAllInOne:
     def vyhledej_pomoci_ai(self, nazev_produktu):
         return []
 
+    # 🚀 OPRAVENÁ LOGIKA: Nejdříve hledá 100% přesný klíč a až potom zkouší kořeny slov
     def najdi_nejlepsi_shodu_v_db(self, slovo_hledane, databaze):
-        if slovo_hledane in databaze:
-            return databaze[slovo_hledane]
+        hledany_klic = slovo_hledane.lower().strip()
+        
+        # Krok 1: Absolutní přesná shoda (Tohle zachrání Auta i Bazény ve velkém souboru!)
+        if hledany_klic in databaze:
+            return databaze[hledany_klic]
             
         def dej_zaklad_slova(slovo):
             slovo = slovo.lower().strip()
@@ -176,22 +176,17 @@ class HeurekaAllInOne:
                     break
             return slovo
 
-        zaklad_hledaneho = dej_zaklad_slova(slovo_hledane)
+        zaklad_hledaneho = dej_zaklad_slova(hledany_klic)
         
+        # Krok 2: Vyhledávání podle základu (Slovo odpovídá základu klíče)
         for klic_db in sorted(databaze.keys(), key=len):
-            if klic_db == slovo_hledane or dej_zaklad_slova(klic_db) == zaklad_hledaneho:
+            if klic_db == hledany_klic or dej_zaklad_slova(klic_db) == zaklad_hledaneho:
                 return databaze[klic_db]
                 
+        # Krok 3: Vyhledávání podle podřetězců základů
         for klic_db in sorted(databaze.keys(), key=len):
             zaklaw_db = dej_zaklad_slova(klic_db)
             if zaklad_hledaneho in zaklaw_db or zaklaw_db in zaklad_hledaneho:
                 return databaze[klic_db]
                 
-        return None
-
-    # 🚀 NEPRŮSTŘELNÁ FUNKCE EXKLUZIVNĚ PRO V2 DATABÁZI (ZABRAŇUJE CHYBNÝM SHODÁM)
-    def najdi_presnou_shodu_v_v2(self, slovo_hledane):
-        hledany_klic = slovo_hledane.lower().strip()
-        if hledany_klic in self.vsechny_parametry_db:
-            return self.vsechny_parametry_db[hledany_klic]
         return None
