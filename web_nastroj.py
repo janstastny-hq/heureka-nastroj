@@ -65,18 +65,57 @@ produkt_input = st.text_input(
 if produkt_input.strip():
     shody = nastroj.vyhledej_presnou_logikou(produkt_input.strip())
     
-    # KONTROLA PŘEKLEPŮ: Pokud nám motor vrátil dynamický návrh z celé DB Heureky, ukážeme ho
-    if shody and shody[0].get('navrh_opravy'):
-        opravene_slovo = shody[0]['navrh_opravy']
-        if opravene_slovo != produkt_input.strip().lower():
-            if st.button(f"💡 Mysleli jste: **{opravene_slovo}**?", type="secondary"):
-                st.session_state["opraveny_text"] = opravene_slovo
+    # KONTROLA PŘEKLEPŮ: Aktivuje se, POUZE pokud klasické vyhledávání nenašlo vůbec nic
+    navrh_opravy = None
+    if not shody:
+        import difflib
+        import unicodedata
+        
+        def bez_diakritiky(text):
+            text_str = str(text).lower()
+            return "".join(c for c in unicodedata.normalize('NFD', text_str) if unicodedata.category(c) != 'Mn')
+            
+        # Vytáhneme slovník slov z Heureky
+        vsechna_slova = set()
+        slovnik_ascii = {}
+        for kat in nastroj.kategorie:
+            cesta_cista = kat.replace("|", " ").replace(",", " ").replace(".", " ")
+            for s in cesta_cista.split():
+                w = s.lower().strip()
+                if len(w) >= 3:
+                    vsechna_slova.add(w)
+                    slovnik_ascii[bez_diakritiky(w)] = w
+                    
+        slovnik_pro_opravu = list(vsechna_slova)
+        slovnik_pro_opravu_ascii = list(slovnik_ascii.keys())
+        
+        slova_uzivatele = produkt_input.strip().lower().split()
+        
+        for i, slovo in enumerate(slova_uzivatele):
+            if slovo not in slovnik_pro_opravu:
+                blizka_shoda = difflib.get_close_matches(slovo, slovnik_pro_opravu, n=1, cutoff=0.60)
+                if blizka_shoda:
+                    slova_uzivatele[i] = blizka_shoda[0]
+                    navrh_opravy = " ".join(slova_uzivatele)
+                    break
+                else:
+                    slovo_ascii = bez_diakritiky(slovo)
+                    blizka_shoda_ascii = difflib.get_close_matches(slovo_ascii, slovnik_pro_opravu_ascii, n=1, cutoff=0.60)
+                    if blizka_shoda_ascii:
+                        slova_uzivatele[i] = slovnik_ascii[blizka_shoda_ascii[0]]
+                        navrh_opravy = " ".join(slova_uzivatele)
+                        break
+                        
+        if navrh_opravy and navrh_opravy != produkt_input.strip().lower():
+            if st.button(f"💡 Mysleli jste: **{navrh_opravy}**?", type="secondary"):
+                st.session_state["opraveny_text"] = navrh_opravy
                 st.rerun()
 
-    # Resetujeme stav mezipaměti, pokud uživatel píše dál ručně
+    # Resetujeme mezipaměť, pokud uživatel píše dál ručně a mění zadání
     if produkt_input.strip() and produkt_input.strip() != st.session_state["opraveny_text"]:
         st.session_state["opraveny_text"] = produkt_input.strip()
     
+    # Vykreslení výsledků vyhledávání
     if shody:
         st.info(txt["type_classic"])
         
@@ -96,13 +135,11 @@ if produkt_input.strip():
                 
                 st.markdown(f"{txt['rules_title']} `{koncova_kat}`")
                 
-                # Žlutý box pro správnou strukturu názvu
                 if pravidlo_text:
                     st.warning(f"{txt['structure_label']} {pravidlo_text}")
                 else:
                     st.info(txt["no_rule"])
                 
-                # Červený box pro parametry
                 if parametry_text and parametry_text.strip():
                     st.error(txt["params_label"])
                     
@@ -127,7 +164,6 @@ if produkt_input.strip():
                         elif "šířka" in p_lower or "width" in p_lower or "výška" in p_lower or "height" in p_lower:
                             priklad_hodnoty = "60 cm"
                         
-                        # Vykreslení krásného formátovaného XML kódu
                         xml_ukazka = f"""```xml
 <PARAM>
   <PARAM_NAME>{p_cisty}</PARAM_NAME>
@@ -141,4 +177,6 @@ if produkt_input.strip():
         else:
             st.error(txt["err_relevant"])
     else:
-        st.error(txt["err_empty"])
+        # Zobrazí se červená chyba vyhledávání, jen když zároveň nevyskočilo tlačítko opravy
+        if not navrh_opravy:
+            st.error(txt["err_empty"])
