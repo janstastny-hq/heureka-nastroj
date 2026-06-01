@@ -10,7 +10,7 @@ st.set_page_config(
     layout="centered"
 )
 
-# Bez cache dekorátoru, aby Streamlit okamžitě reagoval na změny v souborech
+# Bez cache dekorátoru, aby Streamlit natvrdo prohledával čerstvé soubory
 def nacti_nastroj():
     return HeurekaAllInOne()
 
@@ -25,7 +25,7 @@ jazyk = st.radio(
 txt = {
     "title": "🤖 Heureka All-In-One",
     "subtitle": "Chytré vyhledávání kategorií a systémových pravidel" if jazyk == "CZ" else "Smart search for categories and system rules",
-    "desc": "Zadejte název produktu z e-shopu a algoritmus se postará o zbytek." if jazyk == "CZ" else "Enter the product name from the e-shop and the algorithm will do the rest.",
+    "desc": "Zadejte název produktu z e-shopu and algoritmus se postará o zbytek." if jazyk == "CZ" else "Enter the product name from the e-shop and the algorithm will do the rest.",
     "input_label": "📝 Název produktu z eshopu:" if jazyk == "CZ" else "📝 Product name from e-shop:",
     "input_placeholder": "Zadejte název produktu..." if jazyk == "CZ" else "Enter product name...",
     "type_classic": "🔍 Typ hledání: Klasická shoda" if jazyk == "CZ" else "🔍 Search type: Classic match",
@@ -67,20 +67,17 @@ if produkt_input.strip():
                 st.divider()
                 koncova_kat = vybrana_cesta.split('|')[-1].strip()
                 
-                # Načítání z obou souborů na NAPROSTO STEJNÉM PRINCIPU vyhledávacího enginu
+                # Načítání pro povinné a pravidla zůstává přes tvůj engine
                 pravidlo_text = nastroj.najdi_nejlepsi_shodu_v_db(koncova_kat.lower(), nastroj.pravidla_db)
                 parametry_text = nastroj.najdi_nejlepsi_shodu_v_db(koncova_kat.lower(), nastroj.parametry_db)
-                vsechny_parametry_text = nastroj.najdi_nejlepsi_shodu_v_db(koncova_kat.lower(), nastroj.vsechny_parametry_db)
                 
                 st.markdown(f"{txt['rules_title']} `{koncova_kat}`")
                 
-                # 1. Zobrazení systémových pravidel
                 if pravidlo_text:
                     st.warning(f"{txt['structure_label']} {pravidlo_text}")
                 else:
                     st.info(txt["no_rule"])
                 
-                # 2. Zobrazení POVINNÝCH parametrů v XML struktuře (Zůstává jak bylo)
                 if parametry_text and parametry_text.strip():
                     st.error(txt["params_label"])
                     
@@ -116,16 +113,25 @@ if produkt_input.strip():
                 else:
                     st.success(txt["no_param"])
                 
-                # 3. Zobrazení DOPORUČENÝCH parametrů z V2 (ČISTÝ VÝPIS NÁZVŮ V JEDNOM MODRÉM BOXU)
-                st.write("")  # Drobná mezera
+                # --- ZCELA NEPRŮSTŘELNÝ VÝPIS DOPORUČENÝCH PARAMETRŮ ---
+                st.write("")  # Mezera pro přehlednost
+                
+                vsechny_parametry_text = None
+                koncova_kat_lower = koncova_kat.lower().strip()
+                
+                # Natvrdo prohledáme celou načtenou DB V2 podle toho, zda klíč obsahuje název vybrané kategorie
+                for klic_db, hodnota_db in nastroj.vsechny_parametry_db.items():
+                    if klic_db == koncova_kat_lower or klic_db in koncova_kat_lower or koncova_kat_lower in klic_db:
+                        vsechny_parametry_text = hodnota_db
+                        break
                 
                 if vsechny_parametry_text and vsechny_parametry_text.strip():
                     st.info(txt["all_params_label"])
                     
-                    # Rozsekáme parametry podle čárek, očistíme je od mezer
+                    # Rozsekáme parametry podle čárek
                     list_parametru = [p.strip() for p in vsechny_parametry_text.split(',') if p.strip()]
                     
-                    # Vytiskneme je vedle sebe jako čisté textové tagy oddělené lomítkem
+                    # Zobrazíme je vedle sebe v jednom řádku oddělené lomítkem
                     st.markdown(" / ".join([f"`{param}`" for param in list_parametru]))
                 else:
                     st.caption(txt["no_all_param"])
@@ -134,4 +140,4 @@ if produkt_input.strip():
         else:
             st.error(txt["err_relevant"])
     else:
-        st.error(txt["err_empty"])
+        st.error(txt["empty"])
