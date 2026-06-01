@@ -8,9 +8,12 @@ AI_DOSTUPNA = False
 AKTUALNI_SLOZKA = os.path.dirname(os.path.abspath(__file__))
 SOUBOR_KATEGORII = os.path.join(AKTUALNI_SLOZKA, 'kategorie.txt')
 SOUBOR_PARAMETRU = os.path.join(AKTUALNI_SLOZKA, 'parametry.txt')
-# 🚀 OPRAVENÝ NÁZEV: Nyní přesně odpovídá tvé dlouhé pomlčce ze screenshotu!
-SOUBOR_PARAMETRU_V2 = os.path.join(AKTUALNI_SLOZKA, 'parametry–v2.txt') 
 SOUBOR_PRAVIDEL = os.path.join(AKTUALNI_SLOZKA, 'pravidla.txt')
+
+# Automatická detekce správné pomlčky v názvu souboru na disku
+SOUBOR_PARAMETRU_V2 = os.path.join(AKTUALNI_SLOZKA, 'parametry–v2.txt')
+if not os.path.exists(SOUBOR_PARAMETRU_V2):
+    SOUBOR_PARAMETRU_V2 = os.path.join(AKTUALNI_SLOZKA, 'parametry-v2.txt')
 
 class HeurekaAllInOne:
     def __init__(self):
@@ -184,4 +187,11 @@ class HeurekaAllInOne:
             if zaklad_hledaneho in zaklaw_db or zaklaw_db in zaklad_hledaneho:
                 return databaze[klic_db]
                 
+        return None
+
+    # 🚀 NEPRŮSTŘELNÁ FUNKCE EXKLUZIVNĚ PRO V2 DATABÁZI (ZABRAŇUJE CHYBNÝM SHODÁM)
+    def najdi_presnou_shodu_v_v2(self, slovo_hledane):
+        hledany_klic = slovo_hledane.lower().strip()
+        if hledany_klic in self.vsechny_parametry_db:
+            return self.vsechny_parametry_db[hledany_klic]
         return None
