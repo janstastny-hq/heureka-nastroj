@@ -10,7 +10,7 @@ st.set_page_config(
     layout="centered"
 )
 
-@st.cache_resource
+# Smazán @st.cache_resource, aby se databáze natvrdo načetly znovu a nezůstávaly viset v paměti
 def nacti_nastroj():
     return HeurekaAllInOne()
 
@@ -123,7 +123,7 @@ if produkt_input.strip():
                 slova_konce = koncova_kat_lower.split()
                 posledni_slovo = slova_konce[-1].strip() if slova_konce else ""
                 
-                # 1. Krok: Hledáme v obří V2 databázi čistě podle tohoto posledního slova
+                # 1. Krok: Hledáme v obří V2 databázi čistě podle tohoto posledního slova (např. "bazény")
                 if posledni_slovo in nastroj.vsechny_parametry_db:
                     vsechny_parametry_text = nastroj.vsechny_parametry_db[posledni_slovo]
                 else:

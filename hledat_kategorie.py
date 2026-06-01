@@ -49,11 +49,15 @@ class HeurekaAllInOne:
                     radek_s = radek.strip()
                     if not radek_s:
                         continue
+                    
                     oddelovac = None
-                    if '=' in radek_s: oddelovac = '='
+                    # 🚀 KLÍČOVÁ POJISTKA: Nejdříve zkontrolujeme naši specifickou pomlčku s mezerami z V2 souboru
+                    if ' - ' in radek_s: oddelovac = ' - '
+                    elif '=' in radek_s: oddelovac = '='
                     elif '–' in radek_s: oddelovac = '–'
                     elif '—' in radek_s: oddelovac = '—'
                     elif '-' in radek_s: oddelovac = '-'
+                    
                     if oddelovac:
                         klic, hodnota = radek_s.split(oddelovac, 1)
                         cilovy_slovnik[klic.strip().lower()] = hodnota.strip()
