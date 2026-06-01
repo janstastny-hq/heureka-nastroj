@@ -59,9 +59,6 @@ class HeurekaAllInOne:
             pass
 
     def vyhledej_presnou_logikou(self, nazev_produktu):
-        import difflib
-        import unicodedata
-        
         nazev_lower = nazev_produktu.lower()
         synonyma = {
             "iphone": "mobilní telefony",
@@ -71,61 +68,17 @@ class HeurekaAllInOne:
             "xbox": "herní konzole"
         }
 
-        # Načtení databáze z vnitřní paměti aplikace
+        # Načtení databáze kategorií
         databaze_kategorii = self.kategorie if self.kategorie else []
         if not databaze_kategorii:
             if os.path.exists("kategorie.txt"):
                 with open("kategorie.txt", "r", encoding="utf-8") as f:
                     databaze_kategorii = [line.strip() for line in f if line.strip()]
 
-        # NEPRŮSTŘELNÁ FUNKCE: Odstraní diakritiku (háčky/čárky) z jakéhokoliv textu (CZ i SK)
-        def bez_diakritiky(text):
-            text_str = str(text).lower()
-            return "".join(c for c in unicodedata.normalize('NFD', text_str) if unicodedata.category(c) != 'Mn')
-
-        # --- DYNAMICKÝ NAŠEPTÁVAČ ZE VŠECH SLOV V DATABÁZI ---
-        vsechna_slova_heureky = set()
-        slovnik_bez_diakritiky = {} # Mapování "bazen" -> "bazén" pro zpětnou opravu
-        
-        for radek in databaze_kategorii:
-            cesta_cista = radek.replace("<CATEGORY_FULLNAME>", "").replace("</CATEGORY_FULLNAME>", "").replace("<CATEGORY_NAME>", "").replace("</CATEGORY_NAME>", "")
-            # OPRAVENO: cesta_cista místo chybného cesta_cesta
-            for s in cesta_cista.replace("|", " ").replace(",", " ").replace(".", " ").split():
-                slovo_clean = s.lower().strip()
-                if len(slovo_clean) >= 3:
-                    vsechna_slova_heureky.add(slovo_clean)
-                    slovnik_bez_diakritiky[bez_diakritiky(slovo_clean)] = slovo_clean
-        
-        slovnik_pro_opravu = list(vsechna_slova_heureky)
-        slovnik_pro_opravu_ascii = list(slovnik_bez_diakritiky.keys())
-        
-        navrh_opravy = None
-        slova_uzivatele = nazev_lower.split()
-        
-        for i, slovo in enumerate(slova_uzivatele):
-            if slovo not in slovnik_pro_opravu:
-                # 1. Pokus: Najít shodu přímo v Heureka slovech (přísnost 0.55)
-                blizka_shoda = difflib.get_close_matches(slovo, slovnik_pro_opravu, n=1, cutoff=0.55)
-                if blizka_shoda:
-                    slova_uzivatele[i] = blizka_shoda[0]
-                    navrh_opravy = " ".join(slova_uzivatele)
-                    break
-                else:
-                    # 2. Pokus: Porovnání bez háčků a čárek (baze -> bazen)
-                    slovo_ascii = bez_diakritiky(slovo)
-                    blizka_shoda_ascii = difflib.get_close_matches(slovo_ascii, slovnik_pro_opravu_ascii, n=1, cutoff=0.55)
-                    if blizka_shoda_ascii:
-                        slova_uzivatele[i] = slovnik_bez_diakritiky[blizka_shoda_ascii[0]]
-                        navrh_opravy = " ".join(slova_uzivatele)
-                        break
-        # -----------------------------------------------------
-
-        hledany_text_interni = navrh_opravy if navrh_opravy else nazev_produktu
-        hledany_text_lower = hledany_text_interni.lower()
-
-        rozsireny_nazev = hledany_text_interni
+        # Klasické rozšíření o synonyma na základě čistého vstupu od uživatele
+        rozsireny_nazev = nazev_produktu
         for klic, vyznam in synonyma.items():
-            if klic in hledany_text_lower:
+            if klic in nazev_lower:
                 rozsireny_nazev += f" {vyznam}"
 
         cista_slova = [s.lower() for s in rozsireny_nazev.split() if len(s) >= 2]
@@ -133,7 +86,7 @@ class HeurekaAllInOne:
             return []
 
         vysledky = []
-        hleda_mobil = any(m in hledany_text_lower for m in ["mobil", "tel", "phon"])
+        hleda_mobil = any(m in nazev_lower for m in ["mobil", "tel", "phon"])
 
         for radek in databaze_kategorii:
             if "<CATEGORY_NAME>" in radek:
@@ -168,8 +121,7 @@ class HeurekaAllInOne:
 
                 vysledky.append({
                     'cesta': cista_cesta,
-                    'shody': skore,
-                    'navrh_opravy': navrh_opravy
+                    'shody': skore
                 })
 
         videno = set()
