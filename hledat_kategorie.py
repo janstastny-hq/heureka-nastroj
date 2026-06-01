@@ -73,15 +73,16 @@ class HeurekaAllInOne:
             if klic in nazev_lower:
                 rozsireny_nazev += f" {vyznam}"
 
+        # ČISTÉ ŘEŠENÍ: Rozdělíme dotaz na slova, ale už je nebudeme agresivně ořezávat.
+        # Robot se bude spoléhat na to, zda slovo v textu "začíná" nebo je jeho součástí (sub-string).
         cista_slova = [s.lower() for s in rozsireny_nazev.split() if len(s) >= 2]
-        orezana_slova = [self.dej_zaklad_slova(s.lower()) for s in rozsireny_nazev.split() if len(s) >= 2]
         
         if not cista_slova:
             return []
 
         vysledky = []
 
-        # POJISTKA: Detekujeme, zda uživatel nehledá mobil/telefon v jakémkoliv tvaru
+        # POJISTKA: Detekujeme, zda uživatel nehledá mobil/telefon/iphone v jakémkoliv tvaru
         hleda_mobil = any(m in nazev_lower for m in ["mobil", "tel", "phon"])
 
         for radek in self.kategorie_db:
@@ -90,8 +91,8 @@ class HeurekaAllInOne:
             cesta_lower = cista_cesta.lower()
             
             pocet_shod = 0
-            for i in range(len(cista_slova)):
-                if cista_slova[i] in cesta_lower or orezana_slova[i] in cesta_lower:
+            for slovo in cista_slova:
+                if slovo in cesta_lower:
                     pocet_shod += 1
 
             if pocet_shod > 0 or (hleda_mobil and "mobilní telefony" in cesta_lower):
