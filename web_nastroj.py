@@ -113,31 +113,19 @@ if produkt_input.strip():
                 else:
                     st.success(txt["no_param"])
                 
-                # --- NOVÝ MODUL: DOPORUČENÉ PARAMETRY (Z PARAMETRY-V2.TXT VIA FULLPATH MATCH) ---
+                # --- VYLEPŠENÝ MODUL: DOPORUČENÉ PARAMETRY (S VYUŽITÍM ENGINE NAJDI_NEJLEPSI_SHODU_V_DB) ---
                 st.write("")  # Drobná estetická mezera
                 
-                vsechny_parametry_text = None
                 koncova_kat_lower = koncova_kat.lower().strip()
-                
-                # Izolujeme i poslední slovo pro maximální jistotu (např. "bazény")
                 slova_konce = koncova_kat_lower.split()
-                posledni_slovo = slova_konce[-1].strip() if slova_konce else ""
+                posledni_slovo = slova_konce[-1].strip() if slova_konce else koncova_kat_lower
                 
-                # 1. Krok: Zkusíme přímou shodu, pokud by klíč byl čistě název kategorie
-                if koncova_kat_lower in nastroj.vsechny_parametry_db:
-                    vsechny_parametry_text = nastroj.vsechny_parametry_db[koncova_kat_lower]
-                elif posledni_slovo in nastroj.vsechny_parametry_db:
-                    vsechny_parametry_text = nastroj.vsechny_parametry_db[posledni_slovo]
-                else:
-                    # 2. Krok: Prohledáme klíče v DB (dlouhé cesty z tvého txt souboru)
-                    for klic_db in nastroj.vsechny_parametry_db.keys():
-                        # Pokud vybraná koncová kategorie (např. "bazény") je obsažena v klíči DB (např. "dům a zahrada | bazény")
-                        if koncova_kat_lower in klic_db or posledni_slovo == klic_db.split('|')[-1].strip():
-                            vsechny_parametry_text = nastroj.vsechny_parametry_db[klic_db]
-                            break
-                        elif klic_db in koncova_kat_lower:
-                            vsechny_parametry_text = nastroj.vsechny_parametry_db[klic_db]
-                            break
+                # Voláme tvůj originální vyhledávací engine s ořezáváním koncovek podle POSLEDNÍHO sloVA
+                vsechny_parametry_text = nastroj.najdi_nejlepsi_shodu_v_db(posledni_slovo, nastroj.vsechny_parametry_db)
+                
+                # Pokud by se čistě poslední slovo netrefilo, zkusíme jako zálohu celou koncovou kategorii
+                if not vsechny_parametry_text:
+                    vsechny_parametry_text = nastroj.najdi_nejlepsi_shodu_v_db(koncova_kat_lower, nastroj.vsechny_parametry_db)
                 
                 if vsechny_parametry_text and vsechny_parametry_text.strip():
                     st.info(txt["all_params_label"])
@@ -149,7 +137,7 @@ if produkt_input.strip():
                     st.markdown(" / ".join([f"`{param}`" for param in list_parametru]))
                 else:
                     st.caption(txt["no_all_param"])
-                # -------------------------------------------------------------------------------
+                # -----------------------------------------------------------------------------------------------
                         
         else:
             st.error(txt["err_relevant"])
