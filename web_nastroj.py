@@ -5,42 +5,42 @@ import os
 from hledat_kategorie import HeurekaAllInOne
 
 st.set_page_config(
-    page_title="Heureka All-In-One",
+    page_title="Heureka All-In-One SK",
     page_icon="🤖",
     layout="centered"
 )
 
-# Bez cache dekorátoru, aby Streamlit natvrdo prohledával čerstvé soubory
 def nacti_nastroj():
     return HeurekaAllInOne()
 
 nastroj = nacti_nastroj()
 
+# 🚀 OPRAVA: Přepínač změněn na SK a EN
 jazyk = st.radio(
     "🌐 Language / Jazyk:",
-    options=["CZ", "EN"],
+    options=["SK", "EN"],
     horizontal=True
 )
 
+# 🚀 ABSOLUTNÍ OPRAVA: Všechny texty jsou teď pouze slovensky nebo anglicky
 txt = {
-    "title": "🤖 Heureka All-In-One",
-    "subtitle": "Chytré vyhledávání kategorií a systémových pravidel" if jazyk == "CZ" else "Smart search for categories and system rules",
-    "desc": "Zadejte název produktu z e-shopu and algoritmus se postará o zbytek." if jazyk == "CZ" else "Enter the product name from the e-shop and the algorithm will do the rest.",
-    "input_label": "📝 Název produktu z eshopu:" if jazyk == "CZ" else "📝 Product name from e-shop:",
-    "input_placeholder": "Zadejte název produktu..." if jazyk == "CZ" else "Enter product name...",
-    "type_classic": "🔍 Typ hledání: Klasická shoda" if jazyk == "CZ" else "🔍 Search type: Classic match",
-    "select_label": "👉 Vyberte nebo potvrďte finální kategorii:" if jazyk == "CZ" else "👉 Select or confirm the final category:",
-    "rules_title": "### 📋 Systémová pravidla pro:" if jazyk == "CZ" else "### 📋 System rules for:",
-    "structure_label": "**Správná struktura názvu:**" if jazyk == "CZ" else "**Correct name structure:**",
-    "no_rule": "Pro tuto kategorii není definováno žádné specifické pravidlo v pravidla.txt." if jazyk == "CZ" else "No specific rule is defined for this category in pravidla.txt.",
-    "params_label": "🚨 **Povinné parametry v XML struktuře:**" if jazyk == "CZ" else "🚨 **Required parameters in XML structure:**",
-    "no_param": "U této kategorie není vyžadován žádný povinný parametr." if jazyk == "CZ" else "No required parameter is specified for this category.",
-    "err_relevant": "❌ Nepodařilo se najít žádnou dostatečně relevantní kategorii. Zkuste obecnější název." if jazyk == "CZ" else "❌ No sufficiently relevant category found. Try a more general name.",
-    "err_empty": "❌ Nepodařilo se najít žádnou odpovídající kategorii." if jazyk == "CZ" else "❌ No matching category found.",
-    # Nové texty pro doporučené parametry z V2
-    "all_params_label": "💡 **Doporučené a volitelné parametry (Heureka V2):**" if jazyk == "CZ" else "💡 **Recommended and optional parameters (Heureka V2):**",
-    "no_all_param": "Pro tuto kategorii nejsou v Heureka V2 definovány žádné další doporučené parametry." if jazyk == "CZ" else "No additional recommended parameters are defined for this category in Heureka V2.",
-    "table_header": "Název parametru" if jazyk == "CZ" else "Parameter name"
+    "title": "🤖 Heureka All-In-One SK",
+    "subtitle": "Inteligentné vyhľadávanie kategórií a systémových pravidiel" if jazyk == "SK" else "Smart search for categories and system rules",
+    "desc": "Zadajte názov produktu z e-shopu a algoritmus sa postará o zvyšok." if jazyk == "SK" else "Enter the product name from the e-shop and the algorithm will do the rest.",
+    "input_label": "📝 Názov produktu z eshopu:" if jazyk == "SK" else "📝 Product name from e-shop:",
+    "input_placeholder": "Zadajte názov produktu..." if jazyk == "SK" else "Enter product name...",
+    "type_classic": "🔍 Typ vyhľadávania: Klasická zhoda" if jazyk == "SK" else "🔍 Search type: Classic match",
+    "select_label": "👉 Vyberte alebo potvrďte finálnu kategóriu:" if jazyk == "SK" else "👉 Select or confirm the final category:",
+    "rules_title": "### 📋 Systémové pravidlá pre:" if jazyk == "SK" else "### 📋 System rules for:",
+    "structure_label": "**Správna štruktúra názvu:**" if jazyk == "SK" else "**Correct name structure:**",
+    "no_rule": "Pre túto kategóriu nie je definované žiadne špecifické pravidlo v pravidla_sk.txt." if jazyk == "SK" else "No specific rule is defined for this category in pravidla_sk.txt.",
+    "params_label": "🚨 **Povinné parametre v XML štruktúre:**" if jazyk == "SK" else "🚨 **Required parameters in XML structure:**",
+    "no_param": "Pri tejto kategórii nie je vyžadovaný žiadny povinný parameter." if jazyk == "SK" else "No required parameter is specified for this category.",
+    "err_relevant": "❌ Nepodarilo sa nájsť žiadnu dostatočne relevantnú kategóriu. Skúste všeobecnejší názov." if jazyk == "SK" else "❌ No sufficiently relevant category found. Try a more general name.",
+    "err_empty": "❌ Nepodarilo sa nájsť žiadnu zodpovedajúcu kategóriu." if jazyk == "SK" else "❌ No matching category found.",
+    "all_params_label": "💡 **Odporúčané a voliteľné parametre (Heureka V2):**" if jazyk == "SK" else "💡 **Recommended and optional parameters (Heureka V2):**",
+    "no_all_param": "Pre túto kategóriu nie sú v Heureka V2 definované žiadne ďalšie odporúčané parametre." if jazyk == "SK" else "No additional recommended parameters are defined for this category in Heureka V2.",
+    "table_header": "Názov parametra" if jazyk == "SK" else "Parameter name"
 }
 
 st.title(txt["title"])
@@ -68,7 +68,6 @@ if produkt_input.strip():
                 st.divider()
                 koncova_kat = vybrana_cesta.split('|')[-1].strip()
                 
-                # Načítání pro VŠECHNY TŘI databáze na chlup stejným způsobem přes funkční engine
                 pravidlo_text = nastroj.najdi_nejlepsi_shodu_v_db(koncova_kat.lower(), nastroj.pravidla_db)
                 parametry_text = nastroj.najdi_nejlepsi_shodu_v_db(koncova_kat.lower(), nastroj.parametry_db)
                 vsechny_parametry_text = nastroj.najdi_nejlepsi_shodu_v_db(koncova_kat.lower(), nastroj.vsechny_parametry_db)
@@ -89,19 +88,19 @@ if produkt_input.strip():
                             continue
                         
                         p_lower = p_cisty.lower()
-                        priklad_hodnoty = "Hodnota" if jazyk == "CZ" else "Value"
+                        priklad_hodnoty = "Hodnota" if jazyk == "SK" else "Value"
                         
                         if "objem" in p_lower or "volume" in p_lower:
                             priklad_hodnoty = "500 ml"
-                        elif "velikost" in p_lower or "size" in p_lower:
+                        elif "veľkosť" in p_lower or "velkost" in p_lower or "size" in p_lower:
                             priklad_hodnoty = "L"
-                        elif "barva" in p_lower or "color" in p_lower or "colour" in p_lower:
-                            priklad_hodnoty = "Černá" if jazyk == "CZ" else "Black"
-                        elif "váha" in p_lower or "hmotnost" in p_lower or "weight" in p_lower:
+                        elif "farba" in p_lower or "color" in p_lower or "colour" in p_lower:
+                            priklad_hodnoty = "Čierna" if jazyk == "SK" else "Black"
+                        elif "váha" in p_lower or "hmotnosť" in p_lower or "hmotnost" in p_lower or "weight" in p_lower:
                             priklad_hodnoty = "1.5 kg"
                         elif "materiál" in p_lower or "material" in p_lower:
-                            priklad_hodnoty = "Bavlna" if jazyk == "CZ" else "Cotton"
-                        elif "šířka" in p_lower or "width" in p_lower or "výška" in p_lower or "height" in p_lower:
+                            priklad_hodnoty = "Bavlna" if jazyk == "SK" else "Cotton"
+                        elif "šírka" in p_lower or "sirka" in p_lower or "width" in p_lower or "výška" in p_lower or "vyska" in p_lower or "height" in p_lower:
                             priklad_hodnoty = "60 cm"
                         
                         xml_ukazka = f"""```xml
@@ -115,16 +114,13 @@ if produkt_input.strip():
                 else:
                     st.success(txt["no_param"])
                 
-                # --- NOVÝ PŘEHLEDNÝ ROLOVACÍ BOX PRO V2 ---
-                st.write("")  # Mezera pro přehlednost
+                # --- PREHĽADNÝ ROLOVACÍ BOX PRE V2 ---
+                st.write("")  
                 st.info(txt["all_params_label"])
                 
                 if vsechny_parametry_text and vsechny_parametry_text.strip():
-                    # Rozsekáme parametry podle čárek a očistíme od mezer
                     list_parametru = [p.strip() for p in vsechny_parametry_text.split(',') if p.strip()]
                     
-                    # Pokud jich je víc než 10, Streamlit dataframe automaticky zapne scrollbar.
-                    # Výška 380px odpovídá přesně zhruba 10 řádkům, pak se začne rolovat.
                     st.dataframe(
                         {txt["table_header"]: list_parametru},
                         use_container_width=True,
@@ -133,7 +129,6 @@ if produkt_input.strip():
                     )
                 else:
                     st.caption(txt["no_all_param"])
-                # -------------------------------------------------------------------------------
                         
         else:
             st.error(txt["err_relevant"])
