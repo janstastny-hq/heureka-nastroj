@@ -30,24 +30,23 @@ txt = {
     "input_placeholder": "Zadejte název produktu..." if jazyk == "CZ" else "Enter product name...",
     "type_classic": "🔍 Typ hledání: Klasická shoda" if jazyk == "CZ" else "🔍 Search type: Classic match",
     "select_label": "👉 Vyberte nebo potvrďte finální kategorii:" if jazyk == "CZ" else "👉 Select or confirm the final category:",
-    "rules_title": "### 📋 Systémová pravidla pro:" if jazyk == "CZ" else "### 📋 System rules for:",
+    "rules_title": "### 📋 Systemová pravidla pro:" if jazyk == "CZ" else "### 📋 System rules for:",
     "structure_label": "**Správná struktura názvu:**" if jazyk == "CZ" else "**Correct name structure:**",
     "no_rule": "Pro tuto kategorií není definováno žádné specifické pravidlo v pravidla.txt." if jazyk == "CZ" else "No specific rule is defined for this category in pravidla.txt.",
     "params_label": "🚨 **Povinné parametry v XML struktuře:**" if jazyk == "CZ" else "🚨 **Required parameters in XML structure:**",
     "no_param": "U této kategorie není vyžadován žádný povinný parametr." if jazyk == "CZ" else "No required parameter is specified for this category.",
     "err_relevant": "❌ Nepodařilo se najít žádnou dostatečně relevantní kategorii. Zkuste obecnější název." if jazyk == "CZ" else "❌ No sufficiently relevant category found. Try a more general name.",
     "err_empty": "❌ Nepodařilo se najít žádnou odpovídající kategorii." if jazyk == "CZ" else "❌ No matching category found.",
-    # Nové texty pro doporučené parametry z V2 s upraveným popiskem záhlaví
     "all_params_label": "💡 **Doporučené a volitelné parametry (Heureka V2):**" if jazyk == "CZ" else "💡 **Recommended and optional parameters (Heureka V2):**",
     "no_all_param": "Pro tuto kategorii nejsou v Heureka V2 definovány žádné další doporučené parametry." if jazyk == "CZ" else "No additional recommended parameters are defined for this category in Heureka V2.",
     "table_header": "Obecný název produktu" if jazyk == "CZ" else "General product name",
     # Texty pro modul hodnocení
     "rating_title": "### ⭐ Ohodnoťte náš nástroj" if jazyk == "CZ" else "### ⭐ Rate our tool",
+    "rating_select_label": "Kolik hvězdiček nám dáte?" if jazyk == "CZ" else "How many stars do you give us?",
     "rating_comment_label": "Máte pro nás vzkaz nebo nápad na zlepšení?" if jazyk == "CZ" else "Do you have a message or an idea for improvement?",
     "rating_comment_placeholder": "Napište nám..." if jazyk == "CZ" else "Write to us...",
     "rating_button": "Odeslat hodnocení" if jazyk == "CZ" else "Submit rating",
     "rating_success": "🎉 Děkujeme! Vaše hodnocení bylo úspěšně odesláno." if jazyk == "CZ" else "🎉 Thank you! Your rating has been successfully submitted.",
-    "rating_warning": "Prosím, vyberte nejdříve počet hvězdiček." if jazyk == "CZ" else "Please select a star rating first.",
     "rating_error": "Chyba při odesílání, zkuste to prosím později." if jazyk == "CZ" else "Error during submission, please try again later."
 }
 
@@ -60,7 +59,7 @@ st.divider()
 produkt_input = st.text_input(txt["input_label"], placeholder=txt["input_placeholder"])
 
 if produkt_input.strip():
-    shody = nastroj.vyhledej_presnou_logikou(produkt_input.strip())
+    shody = nastroj.vyldejej_presnou_logikou(produkt_input.strip()) if hasattr(nastroj, 'vyldejej_presnou_logikou') else nastroj.vyhledej_presnou_logikou(produkt_input.strip())
     
     if shody:
         st.info(txt["type_classic"])
@@ -76,7 +75,6 @@ if produkt_input.strip():
                 st.divider()
                 koncova_kat = vybrana_cesta.split('|')[-1].strip()
                 
-                # Načítání pro VŠECHNY TŘI databáze na chlup stejným způsobem přes funkční engine
                 pravidlo_text = nastroj.najdi_nejlepsi_shodu_v_db(koncova_kat.lower(), nastroj.pravidla_db)
                 parametry_text = nastroj.najdi_nejlepsi_shodu_v_db(koncova_kat.lower(), nastroj.parametry_db)
                 vsechny_parametry_text = nastroj.najdi_nejlepsi_shodu_v_db(koncova_kat.lower(), nastroj.vsechny_parametry_db)
@@ -123,16 +121,11 @@ if produkt_input.strip():
                 else:
                     st.success(txt["no_param"])
                 
-                # --- NOVÝ PŘEHLEDNÝ ROLOVACÍ BOX PRO V2 ---
-                st.write("")  # Mezera pro přehlednost
+                st.write("")  
                 st.info(txt["all_params_label"])
                 
                 if vsechny_parametry_text and vsechny_parametry_text.strip():
-                    # Rozsekáme parametry podle čárek a očistíme od mezer
                     list_parametru = [p.strip() for p in vsechny_parametry_text.split(',') if p.strip()]
-                    
-                    # Pokud jich je víc než 10, Streamlit dataframe automaticky zapne scrollbar.
-                    # Výška 380px odpovídá přesně zhruba 10 řádkům, pak se začne rolovat.
                     st.dataframe(
                         {txt["table_header"]: list_parametru},
                         use_container_width=True,
@@ -141,7 +134,6 @@ if produkt_input.strip():
                     )
                 else:
                     st.caption(txt["no_all_param"])
-                # -------------------------------------------------------------------------------
                         
         else:
             st.error(txt["err_relevant"])
@@ -149,16 +141,21 @@ if produkt_input.strip():
         st.error(txt["err_empty"])
 
 # ===============================================================================
-# ⭐ MODUL PRO HODNOCENÍ NÁSTROJE (Odesílání na osobní e-mail Seznam)
+# ⭐ MODUL PRO HODNOCENÍ NÁSTROJE (Klasická textová spolehlivá pole)
 # ===============================================================================
 st.divider()
 st.write(txt["rating_title"])
 
-# 1. Tvůj osobní e-mail pro bezproblémové doručení
+# 1. Tvůj osobní e-mail
 TVUJ_EMAIL = "honzik.stast@seznam.cz"
 
-# 2. Bezpečné navázání hvězdiček na paměť aplikace (Session State), aby se po kliku nesmazaly
-hodnoceni = st.feedback("stars", key="vybrane_stars_cz")
+# 2. Náhrada za st.feedback -> 100% spolehlivý číselný výběr
+volba_hvezdicek = st.selectbox(
+    txt["rating_select_label"],
+    options=["⭐⭐⭐⭐⭐ (5/5)", "⭐⭐⭐⭐ (4/5)", "⭐⭐⭐ (3/5)", "⭐⭐ (2/5)", "⭐ (1/5)"],
+    index=0,
+    key="selectbox_stars"
+)
 
 # 3. Textové pole pro komentář
 komentar = st.text_area(
@@ -167,32 +164,26 @@ komentar = st.text_area(
     key="hodnoceni_komentar"
 )
 
-# 4. Odeslání požadavku s pojistkou proti prázdnému textu
+# 4. Odeslání požadavku
 if st.button(txt["rating_button"], key="button_odeslat_hodnoceni"):
-    if st.session_state.get("vybrane_stars_cz") is not None:
-        pocet_hvezdicek = st.session_state["vybrane_stars_cz"] + 1
+    cisty_komentar = komentar.strip()
+    if not cisty_komentar:
+        cisty_komentar = "Uživatel nezadal žádný textový komentář."
+    
+    payload = {
+        "Hodnoceni": volba_hvezdicek,
+        "Komentar": cisty_komentar,
+        "Jazyk": jazyk
+    }
+    
+    try:
+        import requests
+        url_sluzby = f"https://formsubmit.co/ajax/{TVUJ_EMAIL}"
+        response = requests.post(url_sluzby, json=payload)
         
-        # Pojistka: Pokud uživatel nezadal text, vložíme zprávu, aby e-mail nebyl prázdný
-        cisty_komentar = komentar.strip()
-        if not cisty_komentar:
-            cisty_komentar = "Uživatel nezadal žádný textový komentář."
-        
-        payload = {
-            "Pocet hvezdicek": f"{pocet_hvezdicek} / 5",
-            "Komentar": cisty_komentar,
-            "Jazyk prostredi": jazyk
-        }
-        
-        try:
-            import requests
-            url_sluzby = f"https://formsubmit.co/ajax/{TVUJ_EMAIL}"
-            response = requests.post(url_sluzby, json=payload)
-            
-            if response.status_code == 200:
-                st.success(txt["rating_success"])
-            else:
-                st.error(txt["rating_error"])
-        except Exception as e:
-            st.info(f"Hodnocení zaznamenáno ({pocet_hvezdicek} hvězdiček), ale e-mail se nepodařilo odeslat.")
-    else:
-        st.warning(txt["rating_warning"])
+        if response.status_code == 200:
+            st.success(txt["rating_success"])
+        else:
+            st.error(txt["rating_error"])
+    except Exception as e:
+        st.info("Chyba spojení, zprávu se nepodařilo odeslat.")
