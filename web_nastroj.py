@@ -149,13 +149,13 @@ if produkt_input.strip():
         st.error(txt["err_empty"])
 
 # ===============================================================================
-# ⭐ MODUL PRO HODNOCENÍ NÁSTROJE (Zcela nezávislý na zbytku kódu)
+# ⭐ MODUL PRO HODNOCENÍ NÁSTROJE (Odesílání na osobní e-mail Seznam)
 # ===============================================================================
 st.divider()
 st.write(txt["rating_title"])
 
-# 1. Nastavený cílový e-mail
-TVUJ_EMAIL = "jan.stastny@heureka.group"
+# 1. Tvůj osobní e-mail pro bezproblémové doručení
+TVUJ_EMAIL = "honzik.stast@seznam.cz"
 
 # 2. Bezpečné navázání hvězdiček na paměť aplikace (Session State), aby se po kliku nesmazaly
 hodnoceni = st.feedback("stars", key="vybrane_stars_cz")
@@ -169,7 +169,6 @@ komentar = st.text_area(
 
 # 4. Odeslání požadavku s pojistkou proti prázdnému textu
 if st.button(txt["rating_button"], key="button_odeslat_hodnoceni"):
-    # Podíváme se do paměti aplikace, jestli uživatel zvolil hvězdičky
     if st.session_state.get("vybrane_stars_cz") is not None:
         pocet_hvezdicek = st.session_state["vybrane_stars_cz"] + 1
         
