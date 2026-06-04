@@ -157,8 +157,8 @@ st.write(txt["rating_title"])
 # 1. Nastavený cílový e-mail
 TVUJ_EMAIL = "jan.stastny@heureka.group"
 
-# 2. Vestavěné hvězdičky od Streamlitu
-hodnoceni = st.feedback("stars", key="hodnoceni_stars")
+# 2. Bezpečné navázání hvězdiček na paměť aplikace (Session State), aby se po kliku nesmazaly
+hodnoceni = st.feedback("stars", key="vybrane_stars_cz")
 
 # 3. Textové pole pro komentář
 komentar = st.text_area(
@@ -167,14 +167,20 @@ komentar = st.text_area(
     key="hodnoceni_komentar"
 )
 
-# 4. Odeslání požadavku na pozadí přes FormSubmit API (bez nutnosti pandas/numpy)
+# 4. Odeslání požadavku s pojistkou proti prázdnému textu
 if st.button(txt["rating_button"], key="button_odeslat_hodnoceni"):
-    if hodnoceni is not None:
-        pocet_hvezdicek = hodnoceni + 1
+    # Podíváme se do paměti aplikace, jestli uživatel zvolil hvězdičky
+    if st.session_state.get("vybrane_stars_cz") is not None:
+        pocet_hvezdicek = st.session_state["vybrane_stars_cz"] + 1
+        
+        # Pojistka: Pokud uživatel nezadal text, vložíme zprávu, aby e-mail nebyl prázdný
+        cisty_komentar = komentar.strip()
+        if not cisty_komentar:
+            cisty_komentar = "Uživatel nezadal žádný textový komentář."
         
         payload = {
             "Pocet hvezdicek": f"{pocet_hvezdicek} / 5",
-            "Komentar": komentar if komentar.strip() else "Bez komentáře",
+            "Komentar": cisty_komentar,
             "Jazyk prostredi": jazyk
         }
         
