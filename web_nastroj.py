@@ -40,7 +40,15 @@ txt = {
     # Nové texty pro doporučené parametry z V2 s upraveným popiskem záhlaví
     "all_params_label": "💡 **Doporučené a volitelné parametry (Heureka V2):**" if jazyk == "CZ" else "💡 **Recommended and optional parameters (Heureka V2):**",
     "no_all_param": "Pro tuto kategorii nejsou v Heureka V2 definovány žádné další doporučené parametry." if jazyk == "CZ" else "No additional recommended parameters are defined for this category in Heureka V2.",
-    "table_header": "Obecný název produktu" if jazyk == "CZ" else "General product name"
+    "table_header": "Obecný název produktu" if jazyk == "CZ" else "General product name",
+    # Texty pro modul hodnocení
+    "rating_title": "### ⭐ Ohodnoťte náš nástroj" if jazyk == "CZ" else "### ⭐ Rate our tool",
+    "rating_comment_label": "Máte pro nás vzkaz nebo nápad na zlepšení?" if jazyk == "CZ" else "Do you have a message or an idea for improvement?",
+    "rating_comment_placeholder": "Napište nám..." if jazyk == "CZ" else "Write to us...",
+    "rating_button": "Odeslat hodnocení" if jazyk == "CZ" else "Submit rating",
+    "rating_success": "🎉 Děkujeme! Vaše hodnocení bylo úspěšně odesláno." if jazyk == "CZ" else "🎉 Thank you! Your rating has been successfully submitted.",
+    "rating_warning": "Prosím, vyberte nejdříve počet hvězdiček." if jazyk == "CZ" else "Please select a star rating first.",
+    "rating_error": "Chyba při odesílání, zkuste to prosím později." if jazyk == "CZ" else "Error during submission, please try again later."
 }
 
 st.title(txt["title"])
@@ -101,7 +109,7 @@ if produkt_input.strip():
                             priklad_hodnoty = "1.5 kg"
                         elif "materiál" in p_lower or "material" in p_lower:
                             priklad_hodnoty = "Bavlna" if jazyk == "CZ" else "Cotton"
-                        elif "šířka" in p_lower or "width" in p_lower or "výška" in p_lower or "height" in p_lower:
+                        elif "šírka" in p_lower or "width" in p_lower or "výška" in p_lower or "height" in p_lower:
                             priklad_hodnoty = "60 cm"
                         
                         xml_ukazka = f"""```xml
@@ -139,3 +147,47 @@ if produkt_input.strip():
             st.error(txt["err_relevant"])
     else:
         st.error(txt["err_empty"])
+
+# ===============================================================================
+# ⭐ MODUL PRO HODNOCENÍ NÁSTROJE (Zcela nezávislý na zbytku kódu)
+# ===============================================================================
+st.divider()
+st.write(txt["rating_title"])
+
+# 1. Nastavený cílový e-mail
+TVUJ_EMAIL = "jan.stastny@heureka.group"
+
+# 2. Vestavěné hvězdičky od Streamlitu
+hodnoceni = st.feedback("stars", key="hodnoceni_stars")
+
+# 3. Textové pole pro komentář
+komentar = st.text_area(
+    txt["rating_comment_label"], 
+    placeholder=txt["rating_comment_placeholder"],
+    key="hodnoceni_komentar"
+)
+
+# 4. Odeslání požadavku na pozadí přes FormSubmit API (bez nutnosti pandas/numpy)
+if st.button(txt["rating_button"], key="button_odeslat_hodnoceni"):
+    if hodnoceni is not None:
+        pocet_hvezdicek = hodnoceni + 1
+        
+        payload = {
+            "Pocet hvezdicek": f"{pocet_hvezdicek} / 5",
+            "Komentar": komentar if komentar.strip() else "Bez komentáře",
+            "Jazyk prostredi": jazyk
+        }
+        
+        try:
+            import requests
+            url_sluzby = f"https://formsubmit.co/ajax/{TVUJ_EMAIL}"
+            response = requests.post(url_sluzby, json=payload)
+            
+            if response.status_code == 200:
+                st.success(txt["rating_success"])
+            else:
+                st.error(txt["rating_error"])
+        except Exception as e:
+            st.info(f"Hodnocení zaznamenáno ({pocet_hvezdicek} hvězdiček), ale e-mail se nepodařilo odeslat.")
+    else:
+        st.warning(txt["rating_warning"])
