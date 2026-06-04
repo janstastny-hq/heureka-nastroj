@@ -47,8 +47,8 @@ txt = {
     "rating_button": "Odeslat hodnocení" if jazyk == "CZ" else "Submit rating",
     "rating_success": "🎉 Děkujeme! Vaše hodnocení bylo úspěšně uloženo." if jazyk == "CZ" else "🎉 Thank you! Your rating has been successfully saved.",
     "rating_warning": "Prosím, vyberte nejdříve počet hvězdiček." if jazyk == "CZ" else "Please select a star rating first.",
-    # Správcovské texty
-    "admin_panel_title": "📊 Správa nástroje (Jan Šťastný)" if jazyk == "CZ" else "📊 Tool Administration (Jan Šťastný)",
+    # Správcovské texty (Anonymní bez jména)
+    "admin_panel_title": "📊 Správa nástroje" if jazyk == "CZ" else "📊 Tool Administration",
     "admin_password_label": "Zadejte správcovské heslo:" if jazyk == "CZ" else "Enter admin password:",
     "admin_wrong_password": "❌ Nesprávné heslo!" if jazyk == "CZ" else "❌ Incorrect password!"
 }
@@ -154,20 +154,17 @@ st.write(txt["rating_title"])
 # Definujeme název souboru pro ukládání hodnocení ve stejné složce
 SOUBOR_HODNOCENI = os.path.join(os.path.dirname(os.path.abspath(__file__)), "historie_hodnoceni.txt")
 
-# Zabalení hodnocení do formuláře (zabrání promazání hvězdiček novým vykreslením)
+# Zabalení hodnocení do formuláře
 with st.form("formular_hodnoceni", clear_on_submit=True):
     
-    # 1. Původní krásné klikací hvězdičky
     hodnoceni = st.feedback("stars", key="kliknute_hvezdicky")
     
-    # 2. Textové pole pro komentář
     komentar = st.text_area(
         txt["rating_comment_label"], 
         placeholder=txt["rating_comment_placeholder"],
         key="kliknuty_komentar"
     )
     
-    # 3. Tlačítko pro odeslání (uvnitř formuláře musí být st.form_submit_button)
     odeslano = st.form_submit_button(txt["rating_button"])
     
     if odeslano:
@@ -187,7 +184,7 @@ with st.form("formular_hodnoceni", clear_on_submit=True):
         else:
             st.warning(txt["rating_warning"])
 
-# 📊 SKRYTÝ ROZBALOVACÍ PANEL ZABEZPEČENÝ HESLEM (Zůstává na tajné heslo Bandyta12)
+# 📊 ANONYMNÍ SKRYTÝ ROZBALOVACÍ PANEL ZABEZPEČENÝ HESLEM
 st.write("")
 with st.expander(txt["admin_panel_title"]):
     heslo = st.text_input(txt["admin_password_label"], type="password", key="sprava_heslo")
