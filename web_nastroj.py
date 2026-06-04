@@ -30,7 +30,7 @@ txt = {
     "input_placeholder": "Zadejte název produktu..." if jazyk == "CZ" else "Enter product name...",
     "type_classic": "🔍 Typ hledání: Klasická shoda" if jazyk == "CZ" else "🔍 Search type: Classic match",
     "select_label": "👉 Vyberte nebo potvrďte finální kategorii:" if jazyk == "CZ" else "👉 Select or confirm the final category:",
-    "rules_title": "### 📋 Systemová pravidla pro:" if jazyk == "CZ" else "### 📋 System rules for:",
+    "rules_title": "### 📋 Systémová pravidla pro:" if jazyk == "CZ" else "### 📋 System rules for:",
     "structure_label": "**Správná struktura názvu:**" if jazyk == "CZ" else "**Correct name structure:**",
     "no_rule": "Pro tuto kategorií není definováno žádné specifické pravidlo v pravidla.txt." if jazyk == "CZ" else "No specific rule is defined for this category in pravidla.txt.",
     "params_label": "🚨 **Povinné parametry v XML struktuře:**" if jazyk == "CZ" else "🚨 **Required parameters in XML structure:**",
@@ -42,12 +42,15 @@ txt = {
     "table_header": "Obecný název produktu" if jazyk == "CZ" else "General product name",
     # Texty pro modul hodnocení
     "rating_title": "### ⭐ Ohodnoťte náš nástroj" if jazyk == "CZ" else "### ⭐ Rate our tool",
-    "rating_select_label": "Kolik hvězdiček nám dáte?" if jazyk == "CZ" else "How many stars do you give us?",
     "rating_comment_label": "Máte pro nás vzkaz nebo nápad na zlepšení?" if jazyk == "CZ" else "Do you have a message or an idea for improvement?",
     "rating_comment_placeholder": "Napište nám..." if jazyk == "CZ" else "Write to us...",
     "rating_button": "Odeslat hodnocení" if jazyk == "CZ" else "Submit rating",
-    "rating_success": "🎉 Děkujeme! Vaše hodnocení bylo úspěšně odesláno." if jazyk == "CZ" else "🎉 Thank you! Your rating has been successfully submitted.",
-    "rating_error": "Chyba při odesílání, zkuste to prosím později." if jazyk == "CZ" else "Error during submission, please try again later."
+    "rating_success": "🎉 Děkujeme! Vaše hodnocení bylo úspěšně uloženo." if jazyk == "CZ" else "🎉 Thank you! Your rating has been successfully saved.",
+    "rating_warning": "Prosím, vyberte nejdříve počet hvězdiček." if jazyk == "CZ" else "Please select a star rating first.",
+    # Správcovské texty
+    "admin_panel_title": "📊 Správa nástroje (Jan Šťastný)" if jazyk == "CZ" else "📊 Tool Administration (Jan Šťastný)",
+    "admin_password_label": "Zadejte správcovské heslo:" if jazyk == "CZ" else "Enter admin password:",
+    "admin_wrong_password": "❌ Nesprávné heslo!" if jazyk == "CZ" else "❌ Incorrect password!"
 }
 
 st.title(txt["title"])
@@ -59,7 +62,7 @@ st.divider()
 produkt_input = st.text_input(txt["input_label"], placeholder=txt["input_placeholder"])
 
 if produkt_input.strip():
-    shody = nastroj.vyldejej_presnou_logikou(produkt_input.strip()) if hasattr(nastroj, 'vyldejej_presnou_logikou') else nastroj.vyhledej_presnou_logikou(produkt_input.strip())
+    shody = nastroj.vyhledej_presnou_logikou(produkt_input.strip())
     
     if shody:
         st.info(txt["type_classic"])
@@ -121,7 +124,8 @@ if produkt_input.strip():
                 else:
                     st.success(txt["no_param"])
                 
-                st.write("")  
+                # --- NOVÝ PŘEHLEDNÝ ROLOVACÍ BOX PRO V2 ---
+                st.write("")  # Mezera pro přehlednost
                 st.info(txt["all_params_label"])
                 
                 if vsechny_parametry_text and vsechny_parametry_text.strip():
@@ -134,6 +138,7 @@ if produkt_input.strip():
                     )
                 else:
                     st.caption(txt["no_all_param"])
+                # -------------------------------------------------------------------------------
                         
         else:
             st.error(txt["err_relevant"])
@@ -141,49 +146,68 @@ if produkt_input.strip():
         st.error(txt["err_empty"])
 
 # ===============================================================================
-# ⭐ MODUL PRO HODNOCENÍ NÁSTROJE (Klasická textová spolehlivá pole)
+# ⭐ MODUL PRO HODNOCENÍ NÁSTROJE (Klikací hvězdičky uvnitř formuláře s pojistkou)
 # ===============================================================================
 st.divider()
 st.write(txt["rating_title"])
 
-# 1. Tvůj osobní e-mail
-TVUJ_EMAIL = "honzik.stast@seznam.cz"
+# Definujeme název souboru pro ukládání hodnocení ve stejné složce
+SOUBOR_HODNOCENI = os.path.join(os.path.dirname(os.path.abspath(__file__)), "historie_hodnoceni.txt")
 
-# 2. Náhrada za st.feedback -> 100% spolehlivý číselný výběr
-volba_hvezdicek = st.selectbox(
-    txt["rating_select_label"],
-    options=["⭐⭐⭐⭐⭐ (5/5)", "⭐⭐⭐⭐ (4/5)", "⭐⭐⭐ (3/5)", "⭐⭐ (2/5)", "⭐ (1/5)"],
-    index=0,
-    key="selectbox_stars"
-)
-
-# 3. Textové pole pro komentář
-komentar = st.text_area(
-    txt["rating_comment_label"], 
-    placeholder=txt["rating_comment_placeholder"],
-    key="hodnoceni_komentar"
-)
-
-# 4. Odeslání požadavku
-if st.button(txt["rating_button"], key="button_odeslat_hodnoceni"):
-    cisty_komentar = komentar.strip()
-    if not cisty_komentar:
-        cisty_komentar = "Uživatel nezadal žádný textový komentář."
+# Zabalení hodnocení do formuláře (zabrání promazání hvězdiček novým vykreslením)
+with st.form("formular_hodnoceni", clear_on_submit=True):
     
-    payload = {
-        "Hodnoceni": volba_hvezdicek,
-        "Komentar": cisty_komentar,
-        "Jazyk": jazyk
-    }
+    # 1. Původní krásné klikací hvězdičky
+    hodnoceni = st.feedback("stars", key="kliknute_hvezdicky")
     
-    try:
-        import requests
-        url_sluzby = f"https://formsubmit.co/ajax/{TVUJ_EMAIL}"
-        response = requests.post(url_sluzby, json=payload)
-        
-        if response.status_code == 200:
-            st.success(txt["rating_success"])
+    # 2. Textové pole pro komentář
+    komentar = st.text_area(
+        txt["rating_comment_label"], 
+        placeholder=txt["rating_comment_placeholder"],
+        key="kliknuty_komentar"
+    )
+    
+    # 3. Tlačítko pro odeslání (uvnitř formuláře musí být st.form_submit_button)
+    odeslano = st.form_submit_button(txt["rating_button"])
+    
+    if odeslano:
+        if hodnoceni is not None:
+            pocet_hvezdicek = hodnoceni + 1
+            hvezdy_text = "⭐" * pocet_hvezdicek + f" ({pocet_hvezdicek}/5)"
+            
+            cisty_komentar = komentar.strip() if komentar.strip() else "Bez textového komentáře."
+            radek_k_zapisu = f"Hodnocení: {hvezdy_text} | Jazyk: {jazyk} | Vzkaz: {cisty_komentar}\n"
+            
+            try:
+                with open(SOUBOR_HODNOCENI, "a", encoding="utf-8") as f:
+                    f.write(radek_k_zapisu)
+                st.success(txt["rating_success"])
+            except Exception as e:
+                st.error(f"Chyba při ukládání: {e}")
         else:
-            st.error(txt["rating_error"])
-    except Exception as e:
-        st.info("Chyba spojení, zprávu se nepodařilo odeslat.")
+            st.warning(txt["rating_warning"])
+
+# 📊 SKRYTÝ ROZBALOVACÍ PANEL ZABEZPEČENÝ HESLEM (Zůstává na tajné heslo Bandyta12)
+st.write("")
+with st.expander(txt["admin_panel_title"]):
+    heslo = st.text_input(txt["admin_password_label"], type="password", key="sprava_heslo")
+    
+    if heslo == "Bandyta12":
+        if os.path.exists(SOUBOR_HODNOCENI):
+            try:
+                with open(SOUBOR_HODNOCENI, "r", encoding="utf-8") as f:
+                    zaznamy = f.readlines()
+                
+                if zaznamy:
+                    st.write(f"### 📋 Získaná hodnocení (Celkem: {len(zaznamy)}):")
+                    for zr in reversed(zaznamy):
+                        if zr.strip():
+                            st.code(zr.strip(), language="text")
+                else:
+                    st.info("Historie hodnocení je zatím prázdná." if jazyk == "CZ" else "Rating history is empty.")
+            except Exception as e:
+                st.error(f"Chyba při čtení: {e}")
+        else:
+            st.info("Zatím nikdo neodeslal žádné hodnocení." if jazyk == "CZ" else "No ratings submitted yet.")
+    elif heslo != "":
+        st.error(txt["admin_wrong_password"])
