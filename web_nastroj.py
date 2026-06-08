@@ -25,8 +25,8 @@ jazyk = st.radio(
 txt = {
     "title": "🤖 Heureka All-In-One",
     "subtitle": "Chytré vyhledávání kategorií a systémových pravidel" if jazyk == "CZ" else "Smart search for categories and system rules",
-    "desc": "Zadejte název produktu z e-shopu and algoritmus se postará o zbytek." if jazyk == "CZ" else "Enter the product name from the e-shop and the algorithm will do the rest.",
-    "input_label": "### 📝 Obecný název produktu (např. matrace, mobil, pneumatika):",
+    "desc": "Zadejte název produktu z e-shopu a algoritmus se postará o zbytek." if jazyk == "CZ" else "Enter the product name from the e-shop and the algorithm will do the rest.",
+    "input_label": "### 📝 Obecný název produktu (např. matrace, mobil, pneumatika):" if jazyk == "CZ" else "### 📝 General product name (e.g. mattress, mobile, tire):",
     "input_placeholder": "🔍 Sem napište název produktu a stiskněte Enter..." if jazyk == "CZ" else "🔍 Type product name here and press Enter...",
     "type_classic": "🔍 Typ hledání: Klasická shoda" if jazyk == "CZ" else "🔍 Search type: Classic match",
     "select_label": "👉 Vyberte nebo potvrďte finální kategorii:" if jazyk == "CZ" else "👉 Select or confirm the final category:",
@@ -40,7 +40,6 @@ txt = {
     "all_params_label": "💡 **Doporučené a volitelné parametry (Heureka V2):**" if jazyk == "CZ" else "💡 **Recommended and optional parameters (Heureka V2):**",
     "table_header": "Název parametru" if jazyk == "CZ" else "Parameter name",
     "no_all_param": "Pro tuto kategorii nejsou v Heureka V2 definovány žádné další doporučené parametry." if jazyk == "CZ" else "No additional recommended parameters are defined for this category in Heureka V2.",
-    # 🌟 NOVÝ TEXT PRO PODPORU
     "support_text": "💡 **Nevíte si rady?** Pokud potřebujete pomoct s nastavením feedu nebo párováním, napište nám na [podpora@heureka.cz](mailto:podpora@heureka.cz)." if jazyk == "CZ" else "💡 **Need help?** If you need assistance with feed setup or category matching, contact us at [podpora@heureka.cz](mailto:podpora@heureka.cz).",
     # Texty pro modul hodnocení
     "rating_title": "### ⭐ Ohodnoťte náš nástroj" if jazyk == "CZ" else "### ⭐ Rate our tool",
@@ -62,7 +61,8 @@ st.write(txt["desc"])
 st.divider()
 
 st.markdown(txt["input_label"])
-produkt_input = st.text_input(txt["input_label"], placeholder=txt["input_placeholder"], label_visibility="collapsed")
+# Opraveno DuplicateWidgetID použitím fixního klíče pro text_input
+produkt_input = st.text_input("vstupni_pole_produkt", placeholder=txt["input_placeholder"], label_visibility="collapsed", key="vstupni_pole_produkt")
 
 if produkt_input.strip():
     shody = nastroj.vyhledej_presnou_logikou(produkt_input.strip())
@@ -148,70 +148,69 @@ if produkt_input.strip():
     else:
         st.error(txt["err_empty"])
 
-# ===============================================================================
-# ⭐ MODUL PRO HODNOCENÍ NÁSTROJE A PODPORU
-# ===============================================================================
-st.divider()
+    # ===============================================================================
+    # ⭐ MODUL PRO HODNOCENÍ NÁSTROJE A PODPORU
+    # ===============================================================================
+    st.divider()
 
-# Zobrazení odkazu na podporu na konci stránky
-st.markdown(txt["support_text"])
-st.write("")
+    col1, col2 = st.columns([3, 1])
 
-col1, col2 = st.columns([3, 1])
+    with col1:
+        st.write(txt["rating_title"])
+        SOUBOR_HODNOCENI = os.path.join(os.path.dirname(os.path.abspath(__file__)), "historie_hodnoceni.txt")
 
-with col1:
-    st.write(txt["rating_title"])
-    SOUBOR_HODNOCENI = os.path.join(os.path.dirname(os.path.abspath(__file__)), "historie_hodnoceni.txt")
-
-    with st.form("formular_hodnoceni", clear_on_submit=True):
-        hodnoceni = st.feedback("stars", key="kliknute_hvezdicky")
-        
-        komentar = st.text_area(
-            txt["rating_comment_label"], 
-            placeholder=txt["rating_comment_placeholder"],
-            key="kliknuty_komentar"
-        )
-        
-        odeslano = st.form_submit_button(txt["rating_button"])
-        
-        if odeslano:
-            if hodnoceni is not None:
-                pocet_hvezdicek = hodnoceni + 1
-                hvezdy_text = "⭐" * pocet_hvezdicek + f" ({pocet_hvezdicek}/5)"
-                
-                cisty_komentar = komentar.strip() if komentar.strip() else "Bez textového komentáře."
-                radek_k_zapisu = f"Hodnocení: {hvezdy_text} | Jazyk: {jazyk} | Vzkaz: {cisty_komentar}\n"
-                
-                try:
-                    with open(SOUBOR_HODNOCENI, "a", encoding="utf-8") as f:
-                        f.write(radek_k_zapisu)
-                    st.success(txt["rating_success"])
-                except Exception as e:
-                    st.error(f"Chyba při ukládání: {e}")
-            else:
-                st.warning(txt["rating_warning"])
-
-# 📊 ANONYMNÍ SKRYTÝ ROZBALOVACÍ PANEL ZABEZPEČENÝ HESLEM
-st.write("")
-with st.expander(txt["admin_panel_title"]):
-    heslo = st.text_input(txt["admin_password_label"], type="password", key="sprava_heslo")
-    
-    if heslo == "Bandyta12":
-        if os.path.exists(SOUBOR_HODNOCENI):
-            try:
-                with open(SOUBOR_HODNOCENI, "r", encoding="utf-8") as f:
-                    zaznamy = f.readlines()
-                
-                if zaznamy:
-                    st.write(f"### 📋 Získaná hodnocení (Celkem: {len(zaznamy)}):")
-                    for zr in reversed(zaznamy):
-                        if zr.strip():
-                            st.code(zr.strip(), language="text")
+        with st.form("formular_hodnoceni", clear_on_submit=True):
+            hodnoceni = st.feedback("stars", key="kliknute_hvezdicky")
+            
+            komentar = st.text_area(
+                txt["rating_comment_label"], 
+                placeholder=txt["rating_comment_placeholder"],
+                key="kliknuty_komentar"
+            )
+            
+            odeslano = st.form_submit_button(txt["rating_button"])
+            
+            if odeslano:
+                if hodnoceni is not None:
+                    pocet_hvezdicek = hodnoceni + 1
+                    hvezdy_text = "⭐" * pocet_hvezdicek + f" ({pocet_hvezdicek}/5)"
+                    
+                    cisty_komentar = komentar.strip() if komentar.strip() else "Bez textového komentáře."
+                    radek_k_zapisu = f"Hodnocení: {hvezdy_text} | Jazyk: {jazyk} | Vzkaz: {cisty_komentar}\n"
+                    
+                    try:
+                        with open(SOUBOR_HODNOCENI, "a", encoding="utf-8") as f:
+                            f.write(radek_k_zapisu)
+                        st.success(txt["rating_success"])
+                    except Exception as e:
+                        st.error(f"Chyba při ukládání: {e}")
                 else:
-                    st.info("Historie hodnocení je zatím prázdná.")
-            except Exception as e:
-                st.error(f"Chyba při čtení: {e}")
-        else:
-            st.info("Zatím nikdo neodeslal žádné hodnocení.")
-    elif heslo != "":
-        st.error(txt["admin_wrong_password"])
+                    st.warning(txt["rating_warning"])
+
+    st.write("")
+    st.markdown(txt["support_text"])
+
+    # 📊 ANONYMNÍ SKRYTÝ ROZBALOVACÍ PANEL ZABEZPEČENÝ HESLEM (Opraveno typo v podmínce)
+    st.write("")
+    with st.expander(txt["admin_panel_title"]):
+        heslo = st.text_input(txt["admin_password_label"], type="password", key="sprava_heslo")
+        
+        if heslo == "Bandyta12":
+            if os.path.exists(SOUBOR_HODNOCENI):
+                try:
+                    with open(SOUBOR_HODNOCENI, "r", encoding="utf-8") as f:
+                        zaznamy = f.readlines()
+                    
+                    if zaznamy:
+                        st.write(f"### 📋 Získaná hodnocení (Celkem: {len(zaznamy)}):")
+                        for zr in reversed(zaznamy):
+                            if zr.strip():
+                                st.code(zr.strip(), language="text")
+                    else:
+                        st.info("Historie hodnocení je zatím prázdná.")
+                except Exception as e:
+                    st.error(f"Chyba při čtení: {e}")
+            else:
+                st.info("Zatím nikdo neodeslal žádné hodnocení.")
+        elif heslo != "":
+            st.error(txt["admin_wrong_password"])
