@@ -37,9 +37,11 @@ txt = {
     "no_param": "U této kategorie není vyžadován žádný povinný parametr." if jazyk == "CZ" else "No required parameter is specified for this category.",
     "err_relevant": "❌ Nepodařilo se najít žádnou dostatečně relevantní kategorii. Zkuste obecnější název." if jazyk == "CZ" else "❌ No sufficiently relevant category found. Try a more general name.",
     "err_empty": "❌ Nepodařilo se najít žádnou odpovídající kategorii." if jazyk == "CZ" else "❌ No matching category found.",
+    # 🌟 OPRAVA: Nadpis nad tabulkou Heureka V2
     "all_params_label": "💡 **Doporučené a volitelné parametry (Heureka V2):**" if jazyk == "CZ" else "💡 **Recommended and optional parameters (Heureka V2):**",
-    "no_all_param": "Pro tuto kategorii nejsou v Heureka V2 definovány žádné další doporučené parametry." if jazyk == "CZ" else "No additional recommended parameters are defined for this category in Heureka V2.",
+    # 🌟 OPRAVA: Záhlaví uvnitř tabulky
     "table_header": "Obecný název produktu" if jazyk == "CZ" else "General product name",
+    "no_all_param": "Pro tuto kategorii nejsou v Heureka V2 definovány žádné další doporučené parametry." if jazyk == "CZ" else "No additional recommended parameters are defined for this category in Heureka V2.",
     # Texty pro modul hodnocení
     "rating_title": "### ⭐ Ohodnoťte náš nástroj" if jazyk == "CZ" else "### ⭐ Rate our tool",
     "rating_comment_label": "Máte pro nás vzkaz nebo nápad na zlepšení?" if jazyk == "CZ" else "Do you have a message or an idea for improvement?",
@@ -124,12 +126,11 @@ if produkt_input.strip():
                 else:
                     st.success(txt["no_param"])
                 
-                # --- NOVÝ PŘEHLEDNÝ ROLOVACÍ BOX PRO V2 (ŘAZENÝ ABECEDNĚ) ---
+                # --- PŘEHLEDNÝ ROLOVACÍ BOX PRO V2 (ŘAZENÝ ABECEDNĚ) ---
                 st.write("")  
                 st.info(txt["all_params_label"])
                 
                 if vsechny_parametry_text and vsechny_parametry_text.strip():
-                    # 🚀sorted() seřadí parametry abecedně od A do Z
                     list_parametru = sorted([p.strip() for p in vsechny_parametry_text.split(',') if p.strip()])
                     
                     st.dataframe(
@@ -147,11 +148,10 @@ if produkt_input.strip():
         st.error(txt["err_empty"])
 
 # ===============================================================================
-# ⭐ MODUL PRO HODNOCENÍ NÁSTROJE (Zmenšené okénko přes sloupce)
+# ⭐ MODUL PRO HODNOCENÍ NÁSTROJE
 # ===============================================================================
 st.divider()
 
-# Rozdělíme zobrazení na dva sloupce – hodnocení bude v levém užším (šířka 3 ze 4)
 col1, col2 = st.columns([3, 1])
 
 with col1:
