@@ -26,7 +26,8 @@ txt = {
     "title": "🤖 Heureka All-In-One",
     "subtitle": "Chytré vyhledávání kategorií a systémových pravidel" if jazyk == "CZ" else "Smart search for categories and system rules",
     "desc": "Zadejte název produktu z e-shopu and algoritmus se postará o zbytek." if jazyk == "CZ" else "Enter the product name from the e-shop and the algorithm will do the rest.",
-    "input_label": "📝 Název produktu z eshopu:" if jazyk == "CZ" else "📝 Product name from e-shop:",
+    # 🌟 OPRAVA: Text nad vyhledávacím políčkem úplně nahoře
+    "input_label": "📝 Obecný název produktu:" if jazyk == "CZ" else "📝 General product name:",
     "input_placeholder": "Zadejte název produktu..." if jazyk == "CZ" else "Enter product name...",
     "type_classic": "🔍 Typ hledání: Klasická shoda" if jazyk == "CZ" else "🔍 Search type: Classic match",
     "select_label": "👉 Vyberte nebo potvrďte finální kategorii:" if jazyk == "CZ" else "👉 Select or confirm the final category:",
@@ -37,10 +38,9 @@ txt = {
     "no_param": "U této kategorie není vyžadován žádný povinný parametr." if jazyk == "CZ" else "No required parameter is specified for this category.",
     "err_relevant": "❌ Nepodařilo se najít žádnou dostatečně relevantní kategorii. Zkuste obecnější název." if jazyk == "CZ" else "❌ No sufficiently relevant category found. Try a more general name.",
     "err_empty": "❌ Nepodařilo se najít žádnou odpovídající kategorii." if jazyk == "CZ" else "❌ No matching category found.",
-    # 🌟 OPRAVA: Nadpis nad tabulkou Heureka V2
     "all_params_label": "💡 **Doporučené a volitelné parametry (Heureka V2):**" if jazyk == "CZ" else "💡 **Recommended and optional parameters (Heureka V2):**",
-    # 🌟 OPRAVA: Záhlaví uvnitř tabulky
-    "table_header": "Obecný název produktu" if jazyk == "CZ" else "General product name",
+    # 🌟 OPRAVA: Záhlaví uvnitř tabulky parametrů
+    "table_header": "Název parametru" if jazyk == "CZ" else "Parameter name",
     "no_all_param": "Pro tuto kategorii nejsou v Heureka V2 definovány žádné další doporučené parametry." if jazyk == "CZ" else "No additional recommended parameters are defined for this category in Heureka V2.",
     # Texty pro modul hodnocení
     "rating_title": "### ⭐ Ohodnoťte náš nástroj" if jazyk == "CZ" else "### ⭐ Rate our tool",
