@@ -24,11 +24,10 @@ jazyk = st.radio(
 
 txt = {
     "title": "🤖 Heureka All-In-One",
-    "subtitle": "Chytré vyhledávání kategorií and systémových pravidel" if jazyk == "CZ" else "Smart search for categories and system rules",
+    "subtitle": "Chytré vyhledávání kategorií a systémových pravidel" if jazyk == "CZ" else "Smart search for categories and system rules",
     "desc": "Zadejte název produktu z e-shopu and algoritmus se postará o zbytek." if jazyk == "CZ" else "Enter the product name from the e-shop and the algorithm will do the rest.",
-    # 🌟 PRIDÁNY PŘÍKLADY DO ZÁVORKY
-    "input_label": "📝 Obecný název produktu (např. matrace, mobil, pneumatika):" if jazyk == "CZ" else "📝 General product name (e.g. mattress, mobile, tire):",
-    "input_placeholder": "Zadejte název produktu..." if jazyk == "CZ" else "Enter product name...",
+    "input_label": "### 📝 Obecný název produktu (např. matrace, mobil, pneumatika):",
+    "input_placeholder": "🔍 Sem napište název produktu a stiskněte Enter..." if jazyk == "CZ" else "🔍 Type product name here and press Enter...",
     "type_classic": "🔍 Typ hledání: Klasická shoda" if jazyk == "CZ" else "🔍 Search type: Classic match",
     "select_label": "👉 Vyberte nebo potvrďte finální kategorii:" if jazyk == "CZ" else "👉 Select or confirm the final category:",
     "rules_title": "### 📋 Systémová pravidla pro:" if jazyk == "CZ" else "### 📋 System rules for:",
@@ -41,6 +40,8 @@ txt = {
     "all_params_label": "💡 **Doporučené a volitelné parametry (Heureka V2):**" if jazyk == "CZ" else "💡 **Recommended and optional parameters (Heureka V2):**",
     "table_header": "Název parametru" if jazyk == "CZ" else "Parameter name",
     "no_all_param": "Pro tuto kategorii nejsou v Heureka V2 definovány žádné další doporučené parametry." if jazyk == "CZ" else "No additional recommended parameters are defined for this category in Heureka V2.",
+    # 🌟 NOVÝ TEXT PRO PODPORU
+    "support_text": "💡 **Nevíte si rady?** Pokud potřebujete pomoct s nastavením feedu nebo párováním, napište nám na [podpora@heureka.cz](mailto:podpora@heureka.cz)." if jazyk == "CZ" else "💡 **Need help?** If you need assistance with feed setup or category matching, contact us at [podpora@heureka.cz](mailto:podpora@heureka.cz).",
     # Texty pro modul hodnocení
     "rating_title": "### ⭐ Ohodnoťte náš nástroj" if jazyk == "CZ" else "### ⭐ Rate our tool",
     "rating_comment_label": "Máte pro nás vzkaz nebo nápad na zlepšení?" if jazyk == "CZ" else "Do you have a message or an idea for improvement?",
@@ -60,7 +61,8 @@ st.write(txt["desc"])
 
 st.divider()
 
-produkt_input = st.text_input(txt["input_label"], placeholder=txt["input_placeholder"])
+st.markdown(txt["input_label"])
+produkt_input = st.text_input(txt["input_label"], placeholder=txt["input_placeholder"], label_visibility="collapsed")
 
 if produkt_input.strip():
     shody = nastroj.vyhledej_presnou_logikou(produkt_input.strip())
@@ -147,9 +149,13 @@ if produkt_input.strip():
         st.error(txt["err_empty"])
 
 # ===============================================================================
-# ⭐ MODUL PRO HODNOCENÍ NÁSTROJE
+# ⭐ MODUL PRO HODNOCENÍ NÁSTROJE A PODPORU
 # ===============================================================================
 st.divider()
+
+# Zobrazení odkazu na podporu na konci stránky
+st.markdown(txt["support_text"])
+st.write("")
 
 col1, col2 = st.columns([3, 1])
 
